@@ -1,0 +1,143 @@
+<jittershader name="Raymarching Template">
+<description>Raymarching Template</description>
+
+<param name="modelViewProjectionMatrix" type="mat4" state="MODELVIEW_PROJECTION_MATRIX" />
+<param name="position" type="vec3" state="POSITION" />
+<param name="texcoord" type="vec2" state="TEXCOORD" />
+<param name="viewport" type="vec2" state="VIEWPORT" />
+<param name="lightPos" type="vec3" default="0.1, 3.0, -5.0" />
+
+<param name="iTime" type="float" default="0.0" />
+<param name="iResolution" type="vec2" state="RESOLUTION" />
+
+<language name="glsl" version="1.5">
+
+<bind param="modelViewProjectionMatrix" program="vp" />
+<bind param="position" program="vp" />
+<bind param="texcoord" program="vp" />
+<bind param="viewport" program="vp" />
+<bind param="lightPos" program="fp" />
+
+<bind param="iTime" program="fp" />
+<bind param="iResolution" program="fp" />
+
+<program name="vp" type="vertex"  >
+<![CDATA[
+#version 330 core
+
+in vec3 position;
+in vec2 texcoord;
+in vec2 viewport;
+out jit_PerVertex {
+	vec2 texcoord;
+} jit_out;
+uniform mat4 modelViewProjectionMatrix;
+
+void main(void) {
+	gl_Position = modelViewProjectionMatrix*vec4(position, 1.);
+	float aspectRatio = 1280.0 / 720.0; // viewport.x / viewport.y;
+	jit_out.texcoord = texcoord - 0.5;
+	jit_out.texcoord.x *= aspectRatio;
+}
+]]>
+</program>
+		
+<program name="fp" type="fragment"  >
+<![CDATA[
+#version 330 core
+#define MAX_STEPS 100
+#define MIN_DIST 0.0001
+#define MAX_DIST 100.0
+
+in jit_PerVertex {
+	vec2 texcoord;
+} jit_in;
+layout (location = 0) out vec4 outColor;
+
+uniform float iTime;
+uniform vec2 iResolution;
+uniform vec3 lightPos;
+
+float SDFsphere(vec3 pos, vec3 c, float ra){
+	return length(pos - c) - ra;
+}
+
+float getDist(vec3 pos){
+
+	float dist1 = SDFsphere(pos, vec3(-1.0, 0.0, 2.0), 0.7);
+	float dist2 = SDFsphere(pos, vec3(1.0, 0.0, 2.0), 0.5);
+	float dist3 = SDFsphere(pos, vec3(0.1, 1.0, 2.0), 0.3);
+
+	float closest = 10000000;
+	closest = min(closest, dist1);
+	closest = min(closest, dist2);
+	closest = min(closest, dist3);
+	return closest;
+}
+
+float map(vec3 ro, vec3 rd){
+	float currDist = 0;
+	float dist = 0;
+	vec3 pos;
+	for(int i = 0; i < MAX_STEPS; i++) {
+		pos = ro + rd * currDist;
+		dist + getDist(pos);
+		currDist += dist;
+		if(dist < MIN_DIST || currDist > MAX_DIST){
+			break;
+		}
+	}
+	return currDist;
+}
+
+vec3 getNorm(vec3 hitPos){
+	vec2 eps = vec2(0.00001, 0.0);
+	float shiftX = getDist(hitPos + eps.xyy) - getDist(hitPos - eps.xyy);
+	float shiftY = getDist(hitPos + eps.yxy) - getDist(hitPos - eps.yxy);
+	float shiftZ = getDist(hitPos + eps.yyx) - getDist(hitPos - eps.yyx);
+	return normalize(vec3(shiftX, shiftY, shiftZ));
+}
+
+vec3 getLight(vec3 hitPos, vec3 rd){
+	vec3 normals = getNorm(hitPos);
+	vec3 lightDir = normalize(hitPos - lightPos);
+	float direct = max(-dot(lightDir, normals), 0.0);
+	
+	vec3 refRd = reflect(rd, normals);
+	float reflected = max(-dot(lightDir, refRd), 0.0);
+
+	reflected = pow(reflected, 100);
+
+	vec3 ambient = vec3(0.1);
+	vec3 col = vec3(direct + reflected) + ambient;
+	return col;
+}
+
+void main(void) {
+	// Ray origin
+	vec3 ro = vec3(0.0, 0.0, -2.0);
+	
+	// Ray direction
+	float planeDist = 0.6; // Distance to the plane
+	vec3 rd = normalize(vec3(jit_in.texcoord, planeDist));
+	
+	// Raymarching
+	float dist = map(ro, rd);
+
+	vec3 col = vec3(1.0, 0.0, 0.0);
+	vec3 bgCol = vec3(0.0, 0.0, 0.0);
+
+	if (dist > MAX_DIST){
+		outColor = vec4(bgCol, 1.0);
+	} else {
+
+		vec3 hitPos = ro + rd * dist;
+		vec3 test = getLight(hitPos, rd);
+		outColor = vec4(test, 1.0);
+	}
+
+}
+]]>
+</program>
+</language>
+</jittershader>
