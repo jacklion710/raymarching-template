@@ -30,7 +30,7 @@
 <include source="marching-engine.glsl" program="fp" />
 
 <program name="vp" type="vertex" source="raymarching-template.vp.glsl" />
-		
 <program name="fp" type="fragment" source="raymarching-template.fp.glsl" />
+
 </language>
 </jittershader>
