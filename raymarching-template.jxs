@@ -61,26 +61,32 @@ uniform vec2 iResolution;
 uniform vec3 lightPos;
 uniform vec3 camPos;
 
+// SDF Functions
+
 float SDFsphere(vec3 pos, vec3 c, float ra){
 	return length(pos - c) - ra;
 }
 
 float SDFbox(vec3 pos, vec3 c, vec3 ra){
-	vec3 d = abs(pos - c) - ra;
+	vec3 d = abs(pos + c) - ra;
 	return min(max(d.x, max(d.y, d.z)), 0.0) + length(max(d, 0.0));
 }
 
-float getDist(vec3 pos){ // Compose your scene here
+// If only three arguments are provided, origin is assumed to be vec3(0).
+vec3 opRepeatFinite(vec3 p, vec3 cellSize, vec3 halfCount, vec3 origin) {
+    vec3 q = p - origin;
+    vec3 cellIndex = clamp(round(q / cellSize), -halfCount, halfCount);
+    return q - cellSize * cellIndex + origin;
+}
 
-	float dist1 = SDFbox(pos, vec3(-1.0, 0.0, 2.0), vec3(0.7));
-	float dist2 = SDFbox(pos, vec3(1.0, 0.0, 2.0), vec3(0.5));
-	float dist3 = SDFbox(pos, vec3(0.1, 1.0, 2.0), vec3(0.3));
+float getDist(vec3 pos){ // Compose your scene herex
+	// Repeated object settings
+	vec3 repeatCellSize = vec3(0.3);
+	vec3 repeatHalfCount = vec3(1.0, 0.0, 1.0);
 
-	float closest = 10000000;
-	closest = min(closest, dist1);
-	closest = min(closest, dist2);
-	closest = min(closest, dist3);
-	return closest;
+	// Apply finite repetition ONLY to the box's local sample position.
+	vec3 qBox = opRepeatFinite(pos, repeatCellSize, repeatHalfCount, vec3(0.0));
+	return SDFbox(qBox, vec3(0.0), vec3(0.1)) - 0.01;
 }
 
 float map(vec3 ro, vec3 rd){ // Raymarching loop
@@ -150,12 +156,7 @@ void main(void) {
 	vec3 bgCol = vec3(0.0);
 
 	// Color the scene based on the distance to the object
-	if (dist > MAX_DIST){ // bg color
-		col = bgCol;
-	} else { // object color
-		vec3 hitPos = ro + rd * dist;
-		col = getLight(hitPos, rd); 
-	}
+	col = (dist > MAX_DIST) ? bgCol : getLight(ro + rd * dist, rd);
 
 	// Output the color
 	outColor = vec4(col, 1.0);
