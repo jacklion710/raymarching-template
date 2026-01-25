@@ -6,6 +6,7 @@
 <param name="texcoord" type="vec2" state="TEXCOORD" />
 <param name="viewport" type="vec2" state="VIEWPORT" />
 <param name="lightPos" type="vec3" default="0.1, 3.0, -5.0" />
+<param name="camPos" type="vec3" state="CAMERA_POSITION" />
 
 <param name="iTime" type="float" default="0.0" />
 <param name="iResolution" type="vec2" state="RESOLUTION" />
@@ -17,6 +18,7 @@
 <bind param="texcoord" program="vp" />
 <bind param="viewport" program="vp" />
 <bind param="lightPos" program="fp" />
+<bind param="camPos" program="fp" />
 
 <bind param="iTime" program="fp" />
 <bind param="iResolution" program="fp" />
@@ -57,6 +59,7 @@ layout (location = 0) out vec4 outColor;
 uniform float iTime;
 uniform vec2 iResolution;
 uniform vec3 lightPos;
+uniform vec3 camPos;
 
 float SDFsphere(vec3 pos, vec3 c, float ra){
 	return length(pos - c) - ra;
@@ -115,13 +118,24 @@ vec3 getLight(vec3 hitPos, vec3 rd){ // Lighting calculation
 	return col;
 }
 
+mat3 getCameraMatrix(vec3 ro, vec3 ta){
+	vec3 a = normalize(ta - ro);
+	vec3 b = cross(a, vec3(0.0, 1.0, 0.0));
+	vec3 c = cross(b, a);
+	return mat3(b, c, a);
+}
+
 void main(void) {
-	// Ray origin
-	vec3 ro = vec3(0.0, 0.0, -2.0);
+	// Ray origin (camera position)
+	vec3 ro = camPos;
+
+	// Target point
+	vec3 ta = vec3(0.0);
+	mat3 camMat = getCameraMatrix(ro, ta);
 	
 	// Ray direction
 	float planeDist = 0.6; // Distance to the plane
-	vec3 rd = normalize(vec3(jit_in.texcoord, planeDist));
+	vec3 rd = normalize(camMat * vec3(jit_in.texcoord, planeDist));
 	
 	// Raymarching
 	float dist = map(ro, rd);
@@ -131,7 +145,7 @@ void main(void) {
 	vec3 bgCol = vec3(0.0);
 
 	// Color the scene based on the distance to the object
-	if (dist > MAX_DIST){ // bg
+	if (dist > MAX_DIST){ // bg color
 		col = bgCol;
 	} else { // object color
 		vec3 hitPos = ro + rd * dist;
