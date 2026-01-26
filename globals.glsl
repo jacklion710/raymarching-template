@@ -6,7 +6,7 @@
 
 // Raymarch settings
 #ifndef MAX_STEPS
-#define MAX_STEPS 100
+#define MAX_STEPS 500
 #endif
 
 #ifndef MIN_DIST

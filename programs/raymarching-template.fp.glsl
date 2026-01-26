@@ -24,15 +24,13 @@ void main(void) {
 
 	// Output color
 	vec3 col;
-	vec3 bgCol = vec3(0.0);
+	vec3 bgCol = vec3(1.0);
 	vec3 albedoCol = vec3(1.0, 1.0, 1.0);
 
 	// Color the scene based on the distance to the object
 	col = (dist > MAX_DIST) ? bgCol : (getLight(ro + rd * dist, rd) * albedoCol);
 
 	col = distanceFog(col, bgCol, dist);
-	col = colorFog(col, bgCol, dist);
-	col = fogBlend(col, bgCol, dist);
 
 	// Post-processing.
 	col = gammaCorrection(col);    // Apply gamma last (display transform)

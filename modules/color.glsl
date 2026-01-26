@@ -2,7 +2,7 @@
 // col: color to correct
 vec3 gammaCorrection(vec3 col){
 	// Output/display transform expects non-negative values.
-	return pow(max(col, vec3(0.0)), vec3(1.0/2.2));
+	return pow(max(col, vec3(0.0)), vec3(1.0/2.2)); // From linear to sRGB space.
 }
 
 // O(1): Tone mapping.
