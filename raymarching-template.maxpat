@@ -13,11 +13,22 @@
         "boxes": [
             {
                 "box": {
+                    "id": "obj-6",
+                    "maxclass": "button",
+                    "numinlets": 1,
+                    "numoutlets": 1,
+                    "outlettype": [ "bang" ],
+                    "parameter_enable": 0,
+                    "patching_rect": [ 123.0, 310.0, 24.0, 24.0 ]
+                }
+            },
+            {
+                "box": {
                     "id": "obj-76",
                     "maxclass": "newobj",
                     "numinlets": 1,
                     "numoutlets": 0,
-                    "patching_rect": [ 47.0, 475.0, 59.0, 22.0 ],
+                    "patching_rect": [ 48.0, 310.0, 59.0, 22.0 ],
                     "text": "s compile"
                 }
             },
@@ -315,7 +326,7 @@
                     "numoutlets": 1,
                     "outlettype": [ "bang" ],
                     "parameter_enable": 0,
-                    "patching_rect": [ 146.0, 412.0, 24.0, 24.0 ]
+                    "patching_rect": [ 146.0, 247.0, 24.0, 24.0 ]
                 }
             },
             {
@@ -327,7 +338,7 @@
                     "numoutlets": 1,
                     "outlettype": [ "int" ],
                     "parameter_enable": 0,
-                    "patching_rect": [ 97.0, 412.0, 24.0, 24.0 ]
+                    "patching_rect": [ 97.0, 247.0, 24.0, 24.0 ]
                 }
             },
             {
@@ -336,7 +347,7 @@
                     "maxclass": "comment",
                     "numinlets": 1,
                     "numoutlets": 0,
-                    "patching_rect": [ 61.0, 387.0, 109.0, 20.0 ],
+                    "patching_rect": [ 61.0, 222.0, 109.0, 20.0 ],
                     "text": "Recompile counter"
                 }
             },
@@ -350,7 +361,7 @@
                     "numoutlets": 2,
                     "outlettype": [ "", "bang" ],
                     "parameter_enable": 0,
-                    "patching_rect": [ 47.0, 413.0, 39.0, 22.0 ]
+                    "patching_rect": [ 47.0, 248.0, 39.0, 22.0 ]
                 }
             },
             {
@@ -606,7 +617,7 @@
                             }
                         ]
                     },
-                    "patching_rect": [ 48.0, 443.0, 117.0, 22.0 ],
+                    "patching_rect": [ 48.0, 278.0, 117.0, 22.0 ],
                     "text": "p compile"
                 }
             },
@@ -788,7 +799,7 @@
                     "numoutlets": 2,
                     "outlettype": [ "", "" ],
                     "patching_rect": [ 542.0, 175.0, 286.0, 22.0 ],
-                    "text": "jit.mo.time @mode accum @enable 0 @automatic 1"
+                    "text": "jit.mo.time @mode accum @enable 1 @automatic 1"
                 }
             },
             {
@@ -971,7 +982,15 @@
             },
             {
                 "patchline": {
+                    "destination": [ "obj-6", 0 ],
+                    "order": 0,
+                    "source": [ "obj-50", 0 ]
+                }
+            },
+            {
+                "patchline": {
                     "destination": [ "obj-76", 0 ],
+                    "order": 1,
                     "source": [ "obj-50", 0 ]
                 }
             },

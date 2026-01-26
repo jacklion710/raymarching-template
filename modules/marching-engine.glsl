@@ -1,9 +1,20 @@
+// O(1): Get the distance to the nearest object in the scene.
+// pos: world-space position being sampled
 float getDist(vec3 pos){ // Compose your scene herex
-	float cube = SDFbox(pos, vec3(-0.3, 0.0, 0.0), vec3(0.1)) - 0.01;
-	float sphere = SDFsphere(pos, vec3(0.3, 0.0, 0.0), 0.1) - 0.01;
-	return min(cube, sphere);
+	float closest;
+	float ra = (sin(pos.y*100)*0.5 + 0.5);
+	ra *= (sin(pos.x*80)*0.5 + 0.5);
+	ra *= (sin(pos.z*30)*0.5 + 0.5);
+	ra *= 0.1;
+	ra += 0.2;
+	closest = SDFsphere(pos, vec3(sin(iTime * 0.1), 0.0, 0.0), ra);
+	closest = smin(closest, SDFsphere(pos, vec3(sin(iTime * 0.2), 0.0, 0.0), ra), 0.4);
+	return closest;
 }
 
+// O(1): Raymarching loop.
+// ro: ray origin
+// rd: ray direction
 float map(vec3 ro, vec3 rd){ // Raymarching loop
 	float hitMap;
 	float currDist = 0;

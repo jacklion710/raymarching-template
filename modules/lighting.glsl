@@ -1,6 +1,8 @@
 // Forward declaration (the full scene SDF is defined in the main fragment source).
 float getDist(vec3 pos);
 
+// O(1): Normal calculation for lighting.
+// hitPos: hit position
 vec3 getNorm(vec3 hitPos){ // Normal calculation for lighting
 	vec2 eps = vec2(0.00001, 0.0);
 	float shiftX = getDist(hitPos + eps.xyy) - getDist(hitPos - eps.xyy);
@@ -9,6 +11,9 @@ vec3 getNorm(vec3 hitPos){ // Normal calculation for lighting
 	return normalize(vec3(shiftX, shiftY, shiftZ));
 }
 
+// O(1): Lighting calculation.
+// hitPos: hit position
+// rd: ray direction
 vec3 getLight(vec3 hitPos, vec3 rd){ // Lighting calculation
 	vec3 normals = getNorm(hitPos);
 	vec3 lightDir = normalize(hitPos - lightPos);
@@ -24,6 +29,9 @@ vec3 getLight(vec3 hitPos, vec3 rd){ // Lighting calculation
 	return col;
 }
 
+// O(1): Camera matrix calculation.
+// ro: ray origin
+// ta: target point
 mat3 getCameraMatrix(vec3 ro, vec3 ta){
 	vec3 a = normalize(ta - ro);
 	vec3 b = cross(a, vec3(0.0, 1.0, 0.0));

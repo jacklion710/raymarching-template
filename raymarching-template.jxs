@@ -24,6 +24,7 @@
 <bind param="iResolution" program="fp" />
 
 <include source="globals.glsl" program="fp" />
+<include source="modifiers.glsl" program="fp" />
 <include source="sdf.glsl" program="fp" />
 <include source="domain-repetition.glsl" program="fp" />
 <include source="lighting.glsl" program="fp" />
