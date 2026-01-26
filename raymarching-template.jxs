@@ -25,9 +25,12 @@
 
 <include source="globals.glsl" program="fp" />
 <include source="modifiers.glsl" program="fp" />
+<include source="hg_sdf.glsl" program="fp" />
 <include source="sdf.glsl" program="fp" />
+<include source="fog.glsl" program="fp" />
 <include source="domain-repetition.glsl" program="fp" />
 <include source="lighting.glsl" program="fp" />
+<include source="color.glsl" program="fp" />
 <include source="marching-engine.glsl" program="fp" />
 
 <program name="vp" type="vertex" source="raymarching-template.vp.glsl" />
