@@ -11,6 +11,9 @@ vec3 getNorm(vec3 hitPos){ // Normal calculation for lighting
 	return normalize(vec3(shiftX, shiftY, shiftZ));
 }
 
+// O(1): Ambient occlusion calculation.
+// hitPos: hit position
+// normal: normal vector
 float getAmbientOcclusion(vec3 hitPos, vec3 normal){
 	float occ = 0.0;
 	float sca = 1.0;
@@ -18,9 +21,23 @@ float getAmbientOcclusion(vec3 hitPos, vec3 normal){
 		float h = 0.01 + 0.12 * float(i) / 4.0;
 		float d = getDist(hitPos + normal * h);
 		occ += (h - d) * sca;
-		sca *= 0.7;
+		sca *= 0.5;
 	}
 	return clamp(1.0 - 6.0 * occ, 0.0, 1.0);
+}
+
+// O(1): Shadow calculation.
+// hitPos: hit position
+// rd: ray direction
+float getShadow(vec3 hitPos, vec3 rd){
+	for (float h = 0.01; h < 3.0; ){
+		float d = getDist(hitPos + rd * h);
+		if (d < MIN_DIST){
+			return 0.0;
+		}
+		h += d;
+	}
+	return 1.0;
 }
 
 // O(1): Lighting calculation.
@@ -39,7 +56,8 @@ vec3 getLight(vec3 hitPos, vec3 rd){ // Lighting calculation
 	reflected = pow(reflected, 100);
 	vec3 ambient = vec3(0.5);
 	float occ = getAmbientOcclusion(hitPos, normals);
-	vec3 col = vec3(direct + reflected)*lightIntensity + ambient * occ;
+	float shadow = getShadow(hitPos, -lightDir);
+	vec3 col = vec3(direct + reflected) * lightIntensity * shadow + ambient * occ;
 	return col;
 }
 
