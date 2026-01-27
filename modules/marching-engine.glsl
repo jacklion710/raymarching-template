@@ -34,7 +34,7 @@ vec4 map(vec3 ro, vec3 rd){ // Raymarching loop
 		dist = scene.w;
 		currDist += dist;
 		hitMap = i / MAX_STEPS - 1.0;
-		if(dist < MIN_DIST || currDist > farClip){
+		if(abs(dist) < MIN_DIST || currDist > farClip){
 			break;
 		}
 	}
