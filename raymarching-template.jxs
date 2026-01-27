@@ -7,6 +7,8 @@
 <param name="viewport" type="vec2" state="VIEWPORT" />
 <param name="lightPos" type="vec3" default="0.1, 3.0, -5.0" />
 <param name="camPos" type="vec3" state="CAMERA_POSITION" />
+<param name="farClip" type="float" state="FAR_CLIP" />
+<param name="nearClip" type="float" state="NEAR_CLIP" />
 
 <param name="iTime" type="float" default="0.0" />
 <param name="iResolution" type="vec2" state="RESOLUTION" />
@@ -19,6 +21,7 @@
 <bind param="viewport" program="vp" />
 <bind param="lightPos" program="fp" />
 <bind param="camPos" program="fp" />
+<bind param="farClip" program="fp" />
 
 <bind param="iTime" program="fp" />
 <bind param="iResolution" program="fp" />

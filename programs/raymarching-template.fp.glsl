@@ -28,7 +28,7 @@ void main(void) {
 	vec3 albedoCol = vec3(1.0, 1.0, 1.0);
 
 	// Color the scene based on the distance to the object
-	col = (dist > MAX_DIST) ? bgCol : (getLight(ro + rd * dist, rd) * albedoCol);
+	col = (dist > farClip) ? bgCol : (getLight(ro + rd * dist, rd) * albedoCol);
 
 	col = distanceFog(col, bgCol, dist);
 

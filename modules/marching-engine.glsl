@@ -33,7 +33,7 @@ float getDist(vec3 pos){ // Compose your scene here
 // rd: ray direction
 float map(vec3 ro, vec3 rd){ // Raymarching loop
 	float hitMap;
-	float currDist = 0;
+	float currDist = nearClip;
 	float dist = 0; 
 	vec3 pos;
 	for(int i = 0; i < MAX_STEPS; i++) {
@@ -41,7 +41,7 @@ float map(vec3 ro, vec3 rd){ // Raymarching loop
 		dist = getDist(pos);
 		currDist += dist;
 		hitMap = i / MAX_STEPS - 1.0;
-		if(dist < MIN_DIST || currDist > MAX_DIST){
+		if(dist < MIN_DIST || currDist > farClip){
 			break;
 		}
 	}
