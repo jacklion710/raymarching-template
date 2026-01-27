@@ -50,8 +50,12 @@ float smax(float a, float b, float k){
 // b: vec4(albedoRGB, distance)
 // k: smoothing factor (larger = smoother)
 vec4 getSmax(vec4 a, vec4 b, float k) {
-    vec4 na = vec4(a.rgb, -a.w);
-    vec4 nb = vec4(b.rgb, -b.w);
-    vec4 r = getSmin(na, nb, k);
-    return vec4(r.rgb, -r.w);
+    float kSafe = max(k, 0.00001);
+
+    // Smooth max (intersection) using the standard clamp-based polynomial.
+    // Chooses the larger distance and softens the transition by +k*h*(1-h).
+    float h = clamp(0.5 + 0.5 * (a.w - b.w) / kSafe, 0.0, 1.0);
+    float d = mix(b.w, a.w, h) + kSafe * h * (1.0 - h);
+    vec3 albedo = mix(b.rgb, a.rgb, h);
+    return vec4(albedo, d);
 }
