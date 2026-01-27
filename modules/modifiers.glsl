@@ -12,11 +12,12 @@ float smin(float a, float b, float k){
 // a: vec4(albedoRGB, distance)
 // b: vec4(albedoRGB, distance)
 // k: smoothing factor (larger = smoother)
-vec4 sminColor(vec4 a, vec4 b, float k){
-    float h = clamp(0.5 + 0.5 * (b.w - a.w) / k, 0.0, 1.0);
-    float d = mix(b.w, a.w, h) - k * h * (1.0 - h);
-    vec3 albedo = mix(b.rgb, a.rgb, h);
-    return vec4(albedo, d);
+vec4 getSmin (vec4 a, vec4 b, float k){
+    float h = max(k - abs(a.w - b.w), 0.0) / k;
+    float m = h * h * h * 0.5;
+    float s = m * k * (1.0 / 3.0);
+    return (a.w < b.w) ? vec4(mix(a.rgb, b.rgb, vec3(m)), a.w - s) : vec4(mix(b.rgb, a.rgb, vec3(m)), b.w - s);
+
 }
 
 // O(1): Get the minimum of two values.
@@ -48,9 +49,9 @@ float smax(float a, float b, float k){
 // a: vec4(albedoRGB, distance)
 // b: vec4(albedoRGB, distance)
 // k: smoothing factor (larger = smoother)
-vec4 smaxColor(vec4 a, vec4 b, float k){
+vec4 getSmax(vec4 a, vec4 b, float k) {
     vec4 na = vec4(a.rgb, -a.w);
     vec4 nb = vec4(b.rgb, -b.w);
-    vec4 r = sminColor(na, nb, k);
+    vec4 r = getSmin(na, nb, k);
     return vec4(r.rgb, -r.w);
 }

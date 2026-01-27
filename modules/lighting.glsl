@@ -32,7 +32,7 @@ float getAmbientOcclusion(vec3 hitPos, vec3 normal){
 // rd: ray direction
 float getShadow(vec3 hitPos, vec3 rd, float k){
 	float sha = 1.;
-	for (float h = 0.01; h < 3.0; ){
+	for (float h = 0.01; h < 12.0; ){
 		float d = getDist(hitPos + rd * h).w;
 		if (d < MIN_DIST){
 			return 0.0;
