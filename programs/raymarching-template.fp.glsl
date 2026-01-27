@@ -35,6 +35,7 @@ void main(void) {
 	col = distanceFog(col, bgCol, dist);
 
 	// Post-processing.
+	col = toneMapping(col);// Tone mapping
 	col = gammaCorrection(col);    // Apply gamma last (display transform)
 
 	// Output the color

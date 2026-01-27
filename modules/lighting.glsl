@@ -86,9 +86,18 @@ vec3 getLight(vec3 hitPos, vec3 rd){ // Lighting calculation
 
 #if USE_POINT_LIGHT
 	// Point light using getPointLight(); mate is set to 1 because albedo is applied outside getLight().
+	// {
+	// 	// Sky light
+	// 	vec3 pointPos = vec3(40.0, 4.0, -40.0);
+	// 	vec3 pointCol = vec3(1.6, 1.3, 0.9)*1000.0;
+	// 	col += getPointLight(hitPos, pointPos, normals, rd, refRd, pointCol, vec3(1.0));
+	// }
 	{
-		vec3 pointPos = vec3(40.0, 4.0, -40.0);
-		vec3 pointCol = vec3(1.6, 1.3, 0.9);
+		// Blue point light near the cube (kept outside geometry)
+		// Box spans roughly x,z ∈ [-0.1,0.1] and y up to ~0.28, so keep this outside and above.
+		vec3 pointPos = vec3(0.35, 0.35, 0.0);
+		// Boosted because final shading multiplies by material albedo.
+		vec3 pointCol = vec3(0.1, 0.2, 8.0) * 40.0;
 		col += getPointLight(hitPos, pointPos, normals, rd, refRd, pointCol, vec3(1.0));
 	}
 #endif

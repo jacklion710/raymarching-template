@@ -8,7 +8,7 @@ vec3 gammaCorrection(vec3 col){
 // O(1): Tone mapping.
 // col: color to map
 vec3 toneMapping(vec3 col){
-	return col / (col + vec3(1.0));
+	return col /= 1.0 + col;;
 }
 
 // O(1): Exposure.
