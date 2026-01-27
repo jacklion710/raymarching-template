@@ -20,12 +20,14 @@ void main(void) {
 	vec3 rd = normalize(camMat * vec3(jit_in.texcoord, planeDist));
 	
 	// Raymarching
-	float dist = map(ro, rd);
+	vec4 scene = map(ro, rd);
+	vec3 material = scene.rgb;
+	float dist = scene.w;
 
 	// Output color
 	vec3 col;
 	vec3 bgCol = vec3(1.0);
-	vec3 albedoCol = vec3(1.0, 1.0, 1.0);
+	vec3 albedoCol = material;
 
 	// Color the scene based on the distance to the object
 	col = (dist > farClip) ? bgCol : (getLight(ro + rd * dist, rd) * albedoCol);

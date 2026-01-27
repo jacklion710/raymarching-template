@@ -1,6 +1,8 @@
 // O(1): Get the distance bound to the nearest surface in the scene.
 // pos: world-space position being sampled
-float getDist(vec3 pos){ // Compose your scene here
+vec4 getDist(vec3 pos){ // Compose your scene here
+	vec3 colSphere = vec3(0.9, 0.1, 0.12);
+	vec3 colPlane = vec3(0.1, 0.1, 0.9);
 	// Create an infinite plane of glowing spheres (like a glowing orb array in space)
 
 	// cell size for repetition (space between spheres)
@@ -24,26 +26,32 @@ float getDist(vec3 pos){ // Compose your scene here
 	// Flat plane at y=0
 	float plane = fPlane(pos, vec3(0.0, 1.0, 0.0), 0.0);
 
-	// Combine: distance to union, so when near any sphere or plane you get the correct SDF
-	return min(sphere, plane);
+	// vec4(albedoRGB, distance)
+	vec4 sphereSdf = vec4(colSphere, sphere);
+	vec4 planeSdf  = vec4(colPlane,  plane);
+
+	// Combine: union, returning the albedo for the closest surface.
+	return getMin(sphereSdf, planeSdf);
 }
 
 // O(1): Raymarching loop.
 // ro: ray origin
 // rd: ray direction
-float map(vec3 ro, vec3 rd){ // Raymarching loop
+vec4 map(vec3 ro, vec3 rd){ // Raymarching loop
 	float hitMap;
 	float currDist = nearClip;
 	float dist = 0; 
+	vec4 scene;
 	vec3 pos;
 	for(int i = 0; i < MAX_STEPS; i++) {
 		pos = ro + rd * currDist;
-		dist = getDist(pos);
+		scene = getDist(pos);
+		dist = scene.w;
 		currDist += dist;
 		hitMap = i / MAX_STEPS - 1.0;
 		if(dist < MIN_DIST || currDist > farClip){
 			break;
 		}
 	}
-	return currDist;
+	return vec4(scene.rgb, currDist);
 }

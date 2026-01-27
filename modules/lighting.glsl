@@ -1,13 +1,14 @@
 // Forward declaration (the full scene SDF is defined in the main fragment source).
-float getDist(vec3 pos);
+// Returns vec4(albedoRGB, distance).
+vec4 getDist(vec3 pos);
 
 // O(1): Normal calculation for lighting.
 // hitPos: hit position
 vec3 getNorm(vec3 hitPos){ // Normal calculation for lighting
 	vec2 eps = vec2(0.00001, 0.0);
-	float shiftX = getDist(hitPos + eps.xyy) - getDist(hitPos - eps.xyy);
-	float shiftY = getDist(hitPos + eps.yxy) - getDist(hitPos - eps.yxy);
-	float shiftZ = getDist(hitPos + eps.yyx) - getDist(hitPos - eps.yyx);
+	float shiftX = getDist(hitPos + eps.xyy).w - getDist(hitPos - eps.xyy).w;
+	float shiftY = getDist(hitPos + eps.yxy).w - getDist(hitPos - eps.yxy).w;
+	float shiftZ = getDist(hitPos + eps.yyx).w - getDist(hitPos - eps.yyx).w;
 	return normalize(vec3(shiftX, shiftY, shiftZ));
 }
 
@@ -19,7 +20,7 @@ float getAmbientOcclusion(vec3 hitPos, vec3 normal){
 	float sca = 1.0;
 	for(int i = 0; i < 5; i++){
 		float h = 0.01 + 0.12 * float(i) / 4.0;
-		float d = getDist(hitPos + normal * h);
+		float d = getDist(hitPos + normal * h).w;
 		occ += (h - d) * sca;
 		sca *= 0.5;
 	}
@@ -32,7 +33,7 @@ float getAmbientOcclusion(vec3 hitPos, vec3 normal){
 float getShadow(vec3 hitPos, vec3 rd, float k){
 	float sha = 1.;
 	for (float h = 0.01; h < 3.0; ){
-		float d = getDist(hitPos + rd * h);
+		float d = getDist(hitPos + rd * h).w;
 		if (d < MIN_DIST){
 			return 0.0;
 		}
