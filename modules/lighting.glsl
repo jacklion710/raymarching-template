@@ -29,15 +29,17 @@ float getAmbientOcclusion(vec3 hitPos, vec3 normal){
 // O(1): Shadow calculation.
 // hitPos: hit position
 // rd: ray direction
-float getShadow(vec3 hitPos, vec3 rd){
+float getShadow(vec3 hitPos, vec3 rd, float k){
+	float sha = 1.;
 	for (float h = 0.01; h < 3.0; ){
 		float d = getDist(hitPos + rd * h);
 		if (d < MIN_DIST){
 			return 0.0;
 		}
+		sha = min(sha, k * d / h);
 		h += d;
 	}
-	return 1.0;
+	return sha;
 }
 
 // O(1): Lighting calculation.
@@ -56,7 +58,7 @@ vec3 getLight(vec3 hitPos, vec3 rd){ // Lighting calculation
 	reflected = pow(reflected, 100);
 	vec3 ambient = vec3(0.5);
 	float occ = getAmbientOcclusion(hitPos, normals);
-	float shadow = getShadow(hitPos, -lightDir);
+	float shadow = getShadow(hitPos, -lightDir, 16.0);
 	vec3 col = vec3(direct + reflected) * lightIntensity * shadow + ambient * occ;
 	return col;
 }
