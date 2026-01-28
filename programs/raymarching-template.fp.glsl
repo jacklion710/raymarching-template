@@ -25,12 +25,23 @@ void main(void) {
 	float dist = scene.w;
 
 	// Output color
-	vec3 col;
+	vec3 col = vec3(0.0);
 	vec3 bgCol = vec3(1.0);
 	vec3 albedoCol = material;
 
 	// Color the scene based on the distance to the object
-	col = (dist > farClip) ? bgCol : (getLight(ro + rd * dist, rd, material) * albedoCol);
+	if (dist > farClip){
+		col += bgCol;
+	} else {
+		vec3 hitPos = ro + rd * dist;
+		vec3 normals = getNorm(hitPos);
+
+		col += getLight(hitPos, rd, material, normals);
+
+		vec3 R = reflect(rd, normals);
+		vec3 reflRo = hitPos + normals * (MIN_DIST * 4.0);
+		col += getFirstReflection(reflRo, R, bgCol);
+	}
 
 	// col = distanceFog(col, bgCol, dist);
 

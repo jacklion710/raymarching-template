@@ -2,6 +2,10 @@
 // Returns vec4(albedoRGB, distance).
 vec4 getDist(vec3 pos);
 
+// Forward declaration (implemented in marching-engine.glsl, included later).
+// Returns vec4(albedoRGB, distanceAlongRay).
+vec4 map(vec3 ro, vec3 rd);
+
 // O(1): Normal calculation for lighting.
 // hitPos: hit position
 vec3 getNorm(vec3 hitPos){ // Normal calculation for lighting
@@ -79,9 +83,7 @@ vec3 getSkyLight(vec3 hitPos, vec3 normals, float occ, vec3 mate, vec3 refRd, ve
 // O(1): Lighting calculation.
 // hitPos: hit position
 // rd: ray direction
-vec3 getLight(vec3 hitPos, vec3 rd, vec3 mate){ // Lighting calculation
-	
-	vec3 normals = getNorm(hitPos);
+vec3 getLight(vec3 hitPos, vec3 rd, vec3 mate, vec3 normals){ // Lighting calculation
 	
 	// Base Phong lighting (existing path)
 	vec3 lightDir = normalize(hitPos - lightPos);
@@ -97,7 +99,8 @@ vec3 getLight(vec3 hitPos, vec3 rd, vec3 mate){ // Lighting calculation
 	float occ = getAmbientOcclusion(hitPos, normals);
 	float shadow = getShadow(hitPos, -lightDir, 16.0);
 
-	vec3 col = vec3(direct + reflected) * lightIntensity * shadow + ambient * occ;
+	// Apply material albedo here so all light paths behave consistently.
+	vec3 col = (vec3(direct + reflected) * lightIntensity * shadow + ambient * occ) * mate;
 
 #if USE_POINT_LIGHT
 	// Point light using getPointLight(); mate is set to 1 because albedo is applied outside getLight().
@@ -110,12 +113,27 @@ vec3 getLight(vec3 hitPos, vec3 rd, vec3 mate){ // Lighting calculation
 		// Box spans roughly x,z ∈ [-0.1,0.1] and y up to ~0.28, so keep this outside and above.
 		vec3 pointPos = vec3(0.35, 0.35, 0.0);
 		// Boosted because final shading multiplies by material albedo.
-		vec3 pointCol = vec3(0.1, 0.2, 8.0) * 40.0;
+		vec3 pointCol = vec3(0.9, 0.2, 8.0) * 20.0;
 		col += getPointLight(hitPos, pointPos, normals, rd, refRd, pointCol, mate);
 	}
 #endif
 
 	return col;
+}
+
+vec3 getFirstReflection(vec3 ro, vec3 rd, vec3 bgCol){
+	vec4 scene = map(ro, rd);
+	vec3 material = scene.rgb;
+	float dist = scene.w;
+
+	// Color the scene based on the distance to the object
+	if (dist > farClip){
+		return bgCol;
+	} else {
+		vec3 hitPos = ro + rd * dist;
+		vec3 normals = getNorm(hitPos);
+		return getLight(hitPos, rd, material, normals);
+	}
 }
 
 // O(1): Camera matrix calculation.
