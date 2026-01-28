@@ -37,7 +37,7 @@ void main(void) {
 		vec3 normals = getNorm(hitPos);
 		float fresnel = pow(clamp(1. - dot(normals, -rd), 0., 1.), 5.);
 
-		col += getLight(hitPos, rd, material, normals) * (1.0 - fresnel);
+		col += getLight(hitPos, rd, material, normals) * (1.0 - fresnel) * 0.95 + 0.05;
 
 		vec3 R = reflect(rd, normals);
 		vec3 reflRo = hitPos + normals * (MIN_DIST * 4.0);

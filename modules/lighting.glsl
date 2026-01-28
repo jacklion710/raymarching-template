@@ -62,7 +62,7 @@ vec3 getPointLight(vec3 hitPos, vec3 lightPos, vec3 normals, vec3 rd, vec3 refRd
 	float 	sha 		= getShadow(hitPos, -lightDir, 17);
 	float 	dist 		= length(hitPos - lightPos);
 	float   att 		= 1. / (dist*dist);
-	float 	fresnel 	= pow(clamp(1. - dot(halfVec, lightDir), 0., 1.), 5.);
+	float 	fresnel 	= pow(clamp(1. - dot(halfVec, lightDir), 0., 1.), 5.) * 0.95 + 0.05;
 
 	return  vec3(mix(dif, spe, fresnel)) *sha*mate*att*lightCol;
 }
@@ -71,7 +71,7 @@ vec3 getPointLight(vec3 hitPos, vec3 lightPos, vec3 normals, vec3 rd, vec3 refRd
 // normals: normal vector
 vec3 getSkyLight(vec3 hitPos, vec3 normals, float occ, vec3 mate, vec3 refRd, vec3 col){
 	float dif = sqrt(clamp(normals.y * 0.5 + 0.5, 0.0, 1.0));
-	float fresnel = pow(clamp(1. - dot(normals, -refRd), 0., 1.), 5.);
+	float fresnel = pow(clamp(1. - dot(normals, -refRd), 0., 1.), 5.) * 0.95 + 0.05;
 	vec3 skyCol = vec3(0.7, .9, 1.0)*0.4;
 	col += dif * skyCol * occ * mate * (1.0 - fresnel);
 	float spe = smoothstep(-0.2, 0.2, refRd.y);
