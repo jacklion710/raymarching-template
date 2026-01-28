@@ -65,7 +65,7 @@ vec3 getPointLight(vec3 hitPos, vec3 lightPos, vec3 normals, vec3 rd, vec3 refRd
 // O(1): Lighting calculation.
 // hitPos: hit position
 // rd: ray direction
-vec3 getLight(vec3 hitPos, vec3 rd){ // Lighting calculation
+vec3 getLight(vec3 hitPos, vec3 rd, vec3 mate){ // Lighting calculation
 	vec3 normals = getNorm(hitPos);
 
 	// Base Phong lighting (existing path)
@@ -98,7 +98,7 @@ vec3 getLight(vec3 hitPos, vec3 rd){ // Lighting calculation
 		vec3 pointPos = vec3(0.35, 0.35, 0.0);
 		// Boosted because final shading multiplies by material albedo.
 		vec3 pointCol = vec3(0.1, 0.2, 8.0) * 40.0;
-		col += getPointLight(hitPos, pointPos, normals, rd, refRd, pointCol, vec3(1.0));
+		col += getPointLight(hitPos, pointPos, normals, rd, refRd, pointCol, mate);
 	}
 #endif
 

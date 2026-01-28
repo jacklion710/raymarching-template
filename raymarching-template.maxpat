@@ -13,6 +13,56 @@
         "boxes": [
             {
                 "box": {
+                    "data": {
+                        "keymap": {
+                            "a": "move -1 0 0",
+                            "d": "move 1 0 0",
+                            "z": "move 0 -1 0",
+                            "q": "move 0 1 0",
+                            "w": "move 0 0 -1",
+                            "s": "move 0 0 1"
+                        },
+                        "mousemap": {                        }
+                    },
+                    "id": "obj-30",
+                    "maxclass": "newobj",
+                    "numinlets": 2,
+                    "numoutlets": 5,
+                    "outlettype": [ "dictionary", "", "", "", "" ],
+                    "patching_rect": [ 807.0, 303.0, 125.0, 22.0 ],
+                    "saved_object_attributes": {
+                        "embed": 1,
+                        "legacy": 1,
+                        "parameter_enable": 0,
+                        "parameter_mappable": 0
+                    },
+                    "text": "dict uimap @embed 1"
+                }
+            },
+            {
+                "box": {
+                    "id": "obj-32",
+                    "maxclass": "newobj",
+                    "numinlets": 1,
+                    "numoutlets": 2,
+                    "outlettype": [ "", "" ],
+                    "patching_rect": [ 733.0, 326.0, 363.0, 22.0 ],
+                    "text": "jit.anim.drive @ui_listen 1 @ease 0.1 @speed 10 @ui_map uimap"
+                }
+            },
+            {
+                "box": {
+                    "id": "obj-33",
+                    "maxclass": "newobj",
+                    "numinlets": 1,
+                    "numoutlets": 2,
+                    "outlettype": [ "jit_gl_texture", "" ],
+                    "patching_rect": [ 733.0, 356.0, 198.0, 22.0 ],
+                    "text": "jit.gl.camera @tripod 1 @locklook 1"
+                }
+            },
+            {
+                "box": {
                     "attr": "fps",
                     "id": "obj-15",
                     "maxclass": "attrui",
@@ -55,106 +105,6 @@
                     "numoutlets": 0,
                     "patching_rect": [ 48.0, 310.0, 59.0, 22.0 ],
                     "text": "s compile"
-                }
-            },
-            {
-                "box": {
-                    "id": "obj-75",
-                    "maxclass": "newobj",
-                    "numinlets": 1,
-                    "numoutlets": 0,
-                    "patcher": {
-                        "fileversion": 1,
-                        "appversion": {
-                            "major": 9,
-                            "minor": 1,
-                            "revision": 0,
-                            "architecture": "x64",
-                            "modernui": 1
-                        },
-                        "classnamespace": "box",
-                        "rect": [ 0.0, 0.0, 1000.0, 780.0 ],
-                        "boxes": [
-                            {
-                                "box": {
-                                    "data": {
-                                        "keymap": {
-                                            "a": "move -1 0 0",
-                                            "d": "move 1 0 0",
-                                            "z": "move 0 -1 0",
-                                            "q": "move 0 1 0",
-                                            "w": "move 0 0 -1",
-                                            "s": "move 0 0 1"
-                                        },
-                                        "mousemap": {                                        }
-                                    },
-                                    "id": "obj-30",
-                                    "maxclass": "newobj",
-                                    "numinlets": 2,
-                                    "numoutlets": 5,
-                                    "outlettype": [ "dictionary", "", "", "", "" ],
-                                    "patching_rect": [ 124.0, 100.0, 125.0, 22.0 ],
-                                    "saved_object_attributes": {
-                                        "embed": 1,
-                                        "legacy": 1,
-                                        "parameter_enable": 0,
-                                        "parameter_mappable": 0
-                                    },
-                                    "text": "dict uimap @embed 1"
-                                }
-                            },
-                            {
-                                "box": {
-                                    "id": "obj-32",
-                                    "maxclass": "newobj",
-                                    "numinlets": 1,
-                                    "numoutlets": 2,
-                                    "outlettype": [ "", "" ],
-                                    "patching_rect": [ 50.0, 123.0, 363.0, 22.0 ],
-                                    "text": "jit.anim.drive @ui_listen 1 @ease 0.1 @speed 10 @ui_map uimap"
-                                }
-                            },
-                            {
-                                "box": {
-                                    "id": "obj-33",
-                                    "maxclass": "newobj",
-                                    "numinlets": 1,
-                                    "numoutlets": 2,
-                                    "outlettype": [ "jit_gl_texture", "" ],
-                                    "patching_rect": [ 50.0, 153.0, 198.0, 22.0 ],
-                                    "text": "jit.gl.camera @tripod 1 @locklook 1"
-                                }
-                            },
-                            {
-                                "box": {
-                                    "comment": "",
-                                    "id": "obj-74",
-                                    "index": 1,
-                                    "maxclass": "inlet",
-                                    "numinlets": 0,
-                                    "numoutlets": 1,
-                                    "outlettype": [ "" ],
-                                    "patching_rect": [ 50.0, 40.0, 30.0, 30.0 ]
-                                }
-                            }
-                        ],
-                        "lines": [
-                            {
-                                "patchline": {
-                                    "destination": [ "obj-33", 0 ],
-                                    "source": [ "obj-32", 0 ]
-                                }
-                            },
-                            {
-                                "patchline": {
-                                    "destination": [ "obj-33", 0 ],
-                                    "source": [ "obj-74", 0 ]
-                                }
-                            }
-                        ]
-                    },
-                    "patching_rect": [ 253.0, 59.0, 59.0, 22.0 ],
-                    "text": "p camera"
                 }
             },
             {
@@ -652,7 +602,7 @@
                     "maxclass": "newobj",
                     "numinlets": 1,
                     "numoutlets": 0,
-                    "patching_rect": [ 542.0, 215.0, 47.0, 22.0 ],
+                    "patching_rect": [ 542.0, 246.0, 47.0, 22.0 ],
                     "text": "s iTime"
                 }
             },
@@ -673,7 +623,7 @@
                     "numinlets": 2,
                     "numoutlets": 1,
                     "outlettype": [ "" ],
-                    "patching_rect": [ 253.0, 35.0, 68.0, 22.0 ],
+                    "patching_rect": [ 733.0, 298.0, 68.0, 22.0 ],
                     "text": "anim_reset"
                 }
             },
@@ -786,7 +736,7 @@
                     "numinlets": 2,
                     "numoutlets": 1,
                     "outlettype": [ "" ],
-                    "patching_rect": [ 666.5, 132.0, 37.0, 22.0 ],
+                    "patching_rect": [ 667.0, 163.0, 37.0, 22.0 ],
                     "text": "reset"
                 }
             },
@@ -799,7 +749,7 @@
                     "numoutlets": 1,
                     "outlettype": [ "" ],
                     "parameter_enable": 0,
-                    "patching_rect": [ 542.0, 132.0, 128.0, 22.0 ],
+                    "patching_rect": [ 542.0, 163.0, 128.0, 22.0 ],
                     "text_width": 63.0
                 }
             },
@@ -812,7 +762,7 @@
                     "numoutlets": 2,
                     "outlettype": [ "", "bang" ],
                     "parameter_enable": 0,
-                    "patching_rect": [ 601.0, 215.0, 99.0, 22.0 ]
+                    "patching_rect": [ 601.0, 246.0, 99.0, 22.0 ]
                 }
             },
             {
@@ -823,7 +773,7 @@
                     "numinlets": 1,
                     "numoutlets": 2,
                     "outlettype": [ "", "" ],
-                    "patching_rect": [ 542.0, 175.0, 286.0, 22.0 ],
+                    "patching_rect": [ 542.0, 206.0, 286.0, 22.0 ],
                     "text": "jit.mo.time @mode accum @enable 1 @automatic 1"
                 }
             },
@@ -888,7 +838,31 @@
                     "numoutlets": 1,
                     "outlettype": [ "" ],
                     "parameter_enable": 0,
-                    "patching_rect": [ 542.0, 105.0, 150.0, 22.0 ]
+                    "patching_rect": [ 542.0, 136.0, 150.0, 22.0 ]
+                }
+            },
+            {
+                "box": {
+                    "attr": "near_clip",
+                    "id": "obj-2",
+                    "maxclass": "attrui",
+                    "numinlets": 1,
+                    "numoutlets": 1,
+                    "outlettype": [ "" ],
+                    "parameter_enable": 0,
+                    "patching_rect": [ 733.0, 270.0, 150.0, 22.0 ]
+                }
+            },
+            {
+                "box": {
+                    "attr": "far_clip",
+                    "id": "obj-17",
+                    "maxclass": "attrui",
+                    "numinlets": 1,
+                    "numoutlets": 1,
+                    "outlettype": [ "" ],
+                    "parameter_enable": 0,
+                    "patching_rect": [ 733.0, 246.0, 150.0, 22.0 ]
                 }
             }
         ],
@@ -963,8 +937,20 @@
             },
             {
                 "patchline": {
+                    "destination": [ "obj-33", 0 ],
+                    "source": [ "obj-17", 0 ]
+                }
+            },
+            {
+                "patchline": {
                     "destination": [ "obj-16", 0 ],
                     "source": [ "obj-18", 0 ]
+                }
+            },
+            {
+                "patchline": {
+                    "destination": [ "obj-33", 0 ],
+                    "source": [ "obj-2", 0 ]
                 }
             },
             {
@@ -996,8 +982,14 @@
             },
             {
                 "patchline": {
-                    "destination": [ "obj-75", 0 ],
+                    "destination": [ "obj-32", 0 ],
                     "source": [ "obj-31", 0 ]
+                }
+            },
+            {
+                "patchline": {
+                    "destination": [ "obj-33", 0 ],
+                    "source": [ "obj-32", 0 ]
                 }
             },
             {
@@ -1063,7 +1055,7 @@
             {
                 "patchline": {
                     "destination": [ "obj-13", 0 ],
-                    "midpoints": [ 676.0, 164.97946166992188, 551.5, 164.97946166992188 ],
+                    "midpoints": [ 676.5, 195.97946166992188, 551.5, 195.97946166992188 ],
                     "source": [ "obj-7", 0 ]
                 }
             },

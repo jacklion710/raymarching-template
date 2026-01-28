@@ -5,3 +5,5 @@ Launch point for new shader compositions. The goal is to provide the boilerplate
 ## Overview
 
 NOTE: Later it may be nice to add controls to enable/disable different lighting properties in getLight()
+
+Left off on Raymarching 4 - 1:24:11
