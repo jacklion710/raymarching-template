@@ -32,7 +32,7 @@ void main(void) {
 	// Color the scene based on the distance to the object
 	col = (dist > farClip) ? bgCol : (getLight(ro + rd * dist, rd, material) * albedoCol);
 
-	col = distanceFog(col, bgCol, dist);
+	// col = distanceFog(col, bgCol, dist);
 
 	// Post-processing.
 	col = toneMapping(col);// Tone mapping

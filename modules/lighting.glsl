@@ -49,7 +49,7 @@ float getShadow(vec3 hitPos, vec3 rd, float k){
 #endif
 
 vec3 getPointLight(vec3 hitPos, vec3 lightPos, vec3 normals, vec3 rd, vec3 refRd, vec3 lightCol, vec3 mate){
-
+	
 	vec3 	lightDir 	= normalize(hitPos - lightPos);
 	vec3  	halfVec 	= normalize(lightDir - rd);
 	float 	dif 		= max(-dot(lightDir, normals), 0.);
@@ -58,16 +58,31 @@ vec3 getPointLight(vec3 hitPos, vec3 lightPos, vec3 normals, vec3 rd, vec3 refRd
 	float 	sha 		= getShadow(hitPos, -lightDir, 17);
 	float 	dist 		= length(hitPos - lightPos);
 	float   att 		= 1. / (dist*dist);
-	float 	fresnel 	= pow(clamp(1. - dot(halfVec, lightDir), 0., 1.), 5.)*0.95 + 0.05;
+	float 	fresnel 	= pow(clamp(1. - dot(halfVec, lightDir), 0., 1.), 5.);
 
-	return  mix(dif, spe, fresnel)*sha*mate*att*lightCol;
+	return  vec3(mix(dif, spe, fresnel)) *sha*mate*att*lightCol;
 }
+
+// O(1): Sky light calculation.
+// normals: normal vector
+vec3 getSkyLight(vec3 hitPos, vec3 normals, float occ, vec3 mate, vec3 refRd, vec3 col){
+	float dif = sqrt(clamp(normals.y * 0.5 + 0.5, 0.0, 1.0));
+	float fresnel = pow(clamp(1. - dot(normals, -refRd), 0., 1.), 5.);
+	vec3 skyCol = vec3(0.7, .9, 1.0)*0.4;
+	col += dif * skyCol * occ * mate * (1.0 - fresnel);
+	float spe = smoothstep(-0.2, 0.2, refRd.y);
+	spe *= getShadow(hitPos, refRd, 0.5);
+	col += spe * skyCol * occ * fresnel;
+	return col;
+}
+
 // O(1): Lighting calculation.
 // hitPos: hit position
 // rd: ray direction
 vec3 getLight(vec3 hitPos, vec3 rd, vec3 mate){ // Lighting calculation
+	
 	vec3 normals = getNorm(hitPos);
-
+	
 	// Base Phong lighting (existing path)
 	vec3 lightDir = normalize(hitPos - lightPos);
 	float direct = max(-dot(lightDir, normals), 0.0);
@@ -86,13 +101,11 @@ vec3 getLight(vec3 hitPos, vec3 rd, vec3 mate){ // Lighting calculation
 
 #if USE_POINT_LIGHT
 	// Point light using getPointLight(); mate is set to 1 because albedo is applied outside getLight().
-	// {
-	// 	// Sky light
-	// 	vec3 pointPos = vec3(40.0, 4.0, -40.0);
-	// 	vec3 pointCol = vec3(1.6, 1.3, 0.9)*1000.0;
-	// 	col += getPointLight(hitPos, pointPos, normals, rd, refRd, pointCol, vec3(1.0));
-	// }
-	{
+	{   // Sky light
+		col += getSkyLight(hitPos, normals, occ, mate, refRd, col);
+	}
+
+	{   // Point light
 		// Blue point light near the cube (kept outside geometry)
 		// Box spans roughly x,z ∈ [-0.1,0.1] and y up to ~0.28, so keep this outside and above.
 		vec3 pointPos = vec3(0.35, 0.35, 0.0);
