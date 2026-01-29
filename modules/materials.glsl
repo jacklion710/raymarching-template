@@ -31,7 +31,7 @@ vec3 getIridescentColor(float viewAngle, vec3 baseColor) {
 }
 
 // Number of emissive light sources in the scene
-#define NUM_EMISSIVES 3
+#define NUM_EMISSIVES 4
 
 // Emissive light source info (centralized definition)
 // index: 0 to NUM_EMISSIVES-1
@@ -39,21 +39,28 @@ vec3 getIridescentColor(float viewAngle, vec3 baseColor) {
 vec4 getEmissiveSource(int index) {
 	float baseY = 0.12;
 	float radius = 0.05;
-	float spacing = 0.35;
+	float spacing = 0.45;
 	
-	// Row positioned above the cube, spread evenly
-	float rowZ = -0.5;
+	// Row positioned at cube's z position
+	float rowZ = -0.35;
 	float rowY = 0.22 + sin(iTime * 1.2 + float(index) * 1.5) * 0.02;
 	
 	if (index == 0) {
 		// Red (left)
-		return vec4(-spacing, rowY, rowZ, radius);
+		return vec4(-spacing, rowY + 0.11, rowZ - 0.45, radius);
 	} else if (index == 1) {
-		// Green (center)
-		return vec4(0.0, rowY + 0.01, rowZ + 0.05, radius);
-	} else {
+		// Green (center) - more negative z
+		return vec4(0.0, rowY + 0.21, rowZ - 0.55, radius);
+	} else if (index == 2) {
 		// Blue/Cyan (right)
-		return vec4(spacing, rowY + 0.02, rowZ + 0.1, radius);
+		return vec4(spacing, rowY + 0.11, rowZ - 0.45, radius);
+	} else {
+		// Interior light inside wax sphere (SSS demo)
+		// Position matches the wax sphere center
+		float sssY = 0.42 + sin(iTime * 0.6) * 0.01;
+		float sssZ = 0.65;
+		float sssSpacing = 0.3;
+		return vec4(-sssSpacing * 1.5, sssY, sssZ, 0.03);  // Small radius, inside wax
 	}
 }
 
@@ -61,7 +68,7 @@ vec4 getEmissiveSource(int index) {
 // index: 0 to NUM_EMISSIVES-1
 vec4 getEmissiveProperties(int index) {
 	float glowPulse = 0.8 + 0.2 * sin(iTime * 2.0 + float(index) * 2.0);
-	float intensity = 8.0 * glowPulse;
+	float intensity = 4.0 * glowPulse;  // Dimmed from 8.0
 	
 	if (index == 0) {
 		// Red
@@ -69,9 +76,14 @@ vec4 getEmissiveProperties(int index) {
 	} else if (index == 1) {
 		// Green
 		return vec4(0.2, 1.0, 0.3, intensity);
-	} else {
+	} else if (index == 2) {
 		// Blue/Cyan
 		return vec4(0.3, 0.9, 1.0, intensity);
+	} else {
+		// Interior candle light (warm flickering)
+		float flicker = 0.9 + 0.1 * sin(iTime * 8.0) * sin(iTime * 12.0 + 1.0);
+		float candleIntensity = 10.0 * flicker;  // Brighter to shine through wax
+		return vec4(1.0, 0.7, 0.3, candleIntensity);  // Warm candle color
 	}
 }
 

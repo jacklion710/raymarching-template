@@ -81,7 +81,7 @@ vec4 getDist(vec3 pos){ // Compose your scene here
 	
 	// Gold rotating cube
 	float cubeY = 0.08 + sin(iTime * 0.8) * 0.04;
-	vec3 cubePos = pos - vec3(0.0, cubeY, -.85);
+	vec3 cubePos = pos - vec3(0.0, cubeY, -0.45);
 	mat3 rotMat = getRotationMatrix(normalize(vec3(1.0, 1.0, 1.0)), iTime * 0.9);
 	cubePos = rotMat * cubePos;
 	SceneResult cube = sceneResult(

@@ -92,6 +92,54 @@ vec3 getPointLight(vec3 hitPos, vec3 lightPos, vec3 normals, vec3 rd, vec3 refRd
 	return (dif * mate + spe * specColor) * sha * att * lightCol;
 }
 
+// O(1): Spotlight calculation (cone-shaped directional light)
+// hitPos: surface position
+// spotPos: spotlight position
+// spotDir: spotlight direction (normalized)
+// normals: surface normal
+// rd: view ray direction
+// spotCol: light color and intensity
+// innerAngle: inner cone angle in radians (full intensity)
+// outerAngle: outer cone angle in radians (falloff edge)
+vec3 getSpotLight(vec3 hitPos, vec3 spotPos, vec3 spotDir, vec3 normals, vec3 rd, vec3 spotCol, float innerAngle, float outerAngle) {
+	float metallic = gMaterial.metallic;
+	float roughness = gMaterial.roughness;
+	vec3 mate = gMaterial.albedo;
+	
+	vec3 toLight = spotPos - hitPos;
+	float dist = length(toLight);
+	vec3 lightDir = toLight / dist;
+	
+	// Cone attenuation: check angle between light direction and spotlight direction
+	float cosAngle = dot(-lightDir, spotDir);
+	float cosInner = cos(innerAngle);
+	float cosOuter = cos(outerAngle);
+	float spotAtt = clamp((cosAngle - cosOuter) / (cosInner - cosOuter), 0.0, 1.0);
+	spotAtt = spotAtt * spotAtt;  // Smooth falloff
+	
+	if (spotAtt <= 0.0) return vec3(0.0);  // Outside cone
+	
+	// Diffuse
+	float NdotL = max(dot(normals, lightDir), 0.0);
+	vec3 diffuse = mate * NdotL * (1.0 - metallic * 0.9);
+	
+	// Specular
+	vec3 halfVec = normalize(lightDir - rd);
+	float NdotH = max(dot(normals, halfVec), 0.0);
+	float specPower = mix(64.0, 4.0, roughness);
+	float spec = pow(NdotH, specPower);
+	vec3 specColor = mix(vec3(0.5), mate, metallic);
+	vec3 specular = specColor * spec;
+	
+	// Distance attenuation
+	float distAtt = 1.0 / (1.0 + dist * dist * 2.0);
+	
+	// Shadow (optional - can be expensive)
+	float shadow = getShadow(hitPos, lightDir, 8.0);
+	
+	return (diffuse + specular) * spotAtt * distAtt * shadow * spotCol;
+}
+
 // O(1): Sky light calculation.
 // normals: normal vector
 vec3 getSkyLight(vec3 hitPos, vec3 normals, float occ, vec3 mate, vec3 refRd, vec3 col){
@@ -232,6 +280,18 @@ vec3 getLight(vec3 hitPos, vec3 rd, vec3 mate, vec3 normals){
 		float surfaceFade = smoothstep(emissiveRadius, emissiveRadius * 3.0, distToEmissive);
 		
 		col += emissiveDiffuse * emissiveAtt * surfaceFade * emissiveCol * mate * emissivePower;
+	}
+	
+	{   // Spotlight (flashlight effect)
+		// Position in front-right, pointing toward center of scene
+		vec3 spotPos = vec3(0.8, 0.5, -0.3);
+		vec3 spotTarget = vec3(0.0, 0.2, 0.2);
+		vec3 spotDir = normalize(spotTarget - spotPos);
+		vec3 spotCol = vec3(1.0, 0.95, 0.9) * 2.0;  // Warm white
+		float innerAngle = 0.2;   // ~11 degrees (tight beam)
+		float outerAngle = 0.4;   // ~23 degrees (soft edge)
+		
+		col += getSpotLight(hitPos, spotPos, spotDir, normals, rd, spotCol, innerAngle, outerAngle);
 	}
 #endif
 
