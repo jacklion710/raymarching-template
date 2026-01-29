@@ -78,7 +78,9 @@ void main(void) {
 	}
 #endif
 
-	getPostProcessing(col, rd, ro, bgCol, dist);
+	// UV coords for screen-space effects (0 to 1)
+	vec2 uv = jit_in.texcoord * 0.5 + 0.5;
+	getPostProcessing(col, rd, ro, bgCol, dist, uv);
 	
 	// Output the color
 	outColor = vec4(col, 1.0);

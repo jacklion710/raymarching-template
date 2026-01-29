@@ -81,3 +81,114 @@ vec3 hueShift(vec3 col, float hueShift){
 
     return rgb;
 }
+
+// O(1): Vignette effect.
+// Darkens the edges of the screen to draw focus to center.
+// col: color to apply vignette to
+// uv: screen coordinates (normalized -0.5 to 0.5 from center)
+// strength: vignette intensity (0.0 = none, 1.0 = strong)
+// softness: falloff softness (higher = softer edge)
+vec3 vignette(vec3 col, vec2 uv, float strength, float softness) {
+	float dist = length(uv);
+	float vig = 1.0 - smoothstep(1.0 - softness, 1.0, dist * (1.0 + strength));
+	return col * vig;
+}
+
+// O(1): Film grain effect.
+// Adds organic noise texture for cinematic feel.
+// col: color to add grain to
+// uv: screen coordinates
+// time: animation time for varying grain
+// amount: grain intensity (0.0 = none, 0.1 = subtle, 0.3 = heavy)
+vec3 filmGrain(vec3 col, vec2 uv, float time, float amount) {
+	// Hash-based noise for random grain pattern
+	float noise = fract(sin(dot(uv + fract(time), vec2(12.9898, 78.233))) * 43758.5453);
+	noise = (noise - 0.5) * amount;
+	return col + vec3(noise);
+}
+
+// O(1): Chromatic aberration effect.
+// Simulates RGB color fringing at screen edges (lens imperfection).
+// Uses texture sampling offsets - call before other effects.
+// uv: normalized screen coordinates (0 to 1)
+// center: screen center (typically 0.5, 0.5)
+// strength: aberration intensity (0.001 = subtle, 0.01 = strong)
+// Note: Returns offset UVs for R, G, B channels respectively
+vec3 chromaticAberrationOffsets(vec2 uv, vec2 center, float strength) {
+	vec2 dir = uv - center;
+	float dist = length(dir);
+	vec2 offset = dir * dist * strength;
+	// Returns: x = red offset multiplier, y = green (none), z = blue offset multiplier
+	return vec3(-1.0, 0.0, 1.0) * length(offset);
+}
+
+// O(1): Dithering to reduce color banding.
+// Adds subtle noise before quantization to smooth gradients.
+// col: color to dither
+// uv: screen coordinates
+// bitDepth: target bit depth (8.0 for standard displays)
+vec3 dither(vec3 col, vec2 uv, float bitDepth) {
+	float levels = pow(2.0, bitDepth);
+	// Triangular dither noise (better than uniform)
+	float noise1 = fract(sin(dot(uv, vec2(12.9898, 78.233))) * 43758.5453);
+	float noise2 = fract(sin(dot(uv + 0.5, vec2(12.9898, 78.233))) * 43758.5453);
+	float triNoise = (noise1 + noise2 - 1.0) / levels;
+	return col + vec3(triNoise);
+}
+
+// O(1): Sharpening filter (unsharp mask approximation).
+// Enhances edge detail. Best applied after blur/fog effects.
+// col: center pixel color
+// neighbors: average of surrounding pixels (requires sampling)
+// amount: sharpening strength (0.0 = none, 1.0 = strong)
+vec3 sharpen(vec3 col, vec3 neighbors, float amount) {
+	vec3 sharpened = col + (col - neighbors) * amount;
+	return clamp(sharpened, 0.0, 1.0);
+}
+
+// O(1): Split toning effect.
+// Applies different color tints to shadows vs highlights.
+// col: color to tone
+// shadowTint: color to add to dark areas
+// highlightTint: color to add to bright areas
+// balance: crossover point (0.5 = middle gray)
+vec3 splitToning(vec3 col, vec3 shadowTint, vec3 highlightTint, float balance) {
+	float luma = dot(col, vec3(0.2126, 0.7152, 0.0722));
+	float shadowWeight = smoothstep(balance, 0.0, luma);
+	float highlightWeight = smoothstep(balance, 1.0, luma);
+	col = mix(col, col * shadowTint, shadowWeight * 0.5);
+	col = mix(col, col + highlightTint * 0.2, highlightWeight);
+	return col;
+}
+
+// O(1): Color temperature adjustment.
+// Shifts white balance between warm (yellow/orange) and cool (blue).
+// col: color to adjust
+// temperature: -1.0 = cool/blue, 0.0 = neutral, 1.0 = warm/orange
+vec3 colorTemperature(vec3 col, float temperature) {
+	// Warm shift increases red/yellow, decreases blue
+	// Cool shift increases blue, decreases red/yellow
+	vec3 warm = vec3(1.0 + temperature * 0.1, 1.0, 1.0 - temperature * 0.15);
+	vec3 cool = vec3(1.0 + temperature * 0.1, 1.0 + temperature * 0.02, 1.0 - temperature * 0.1);
+	return col * (temperature > 0.0 ? warm : cool);
+}
+
+// O(1): Brightness adjustment.
+// Simple additive brightness control.
+// col: color to adjust
+// brightness: amount to add (-1.0 to 1.0, 0.0 = no change)
+vec3 brightness(vec3 col, float brightness) {
+	return col + vec3(brightness);
+}
+
+// O(1): Lift/Gamma/Gain color correction.
+// Professional color grading controls.
+// col: color to correct
+// lift: adjusts blacks/shadows (vec3 for RGB control)
+// gamma: adjusts midtones
+// gain: adjusts highlights/whites
+vec3 liftGammaGain(vec3 col, vec3 lift, vec3 gamma, vec3 gain) {
+	col = col * gain + lift;
+	col = pow(max(col, vec3(0.0)), 1.0 / gamma);
+	return col;
+}
