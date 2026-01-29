@@ -7,9 +7,20 @@ in jit_PerVertex {
 
 layout (location = 0) out vec4 outColor;
 
+// Returns the radius of a regular polygon at a given angle
+// blades: number of aperture blades (6 = hexagon, 5 = pentagon, etc.)
+// rotation: rotates the polygon shape
+float polygonRadius(float angle, float blades, float rotation) {
+	float segment = 6.28318530718 / blades;
+	float a = mod(angle + rotation, segment) - segment * 0.5;
+	return cos(segment * 0.5) / cos(a);
+}
+
 void main(void) {
-	const int DoF = 2;
-	const float aperture = 0.3;
+	const int DoF = 4;
+	const float aperture = 0.12;
+	const float apertureBlades = 6.0;  // 6 = hexagon, 5 = pentagon, 8 = octagon
+	const float apertureRotation = 0.0;  // Rotation of the bokeh shape in radians
 
 	// Output color
 	vec3 col = vec3(0.0);
@@ -31,8 +42,16 @@ void main(void) {
 
 	for (int i = 0; i < DoF; i++) {
 
-		vec3 rnd = hash(uvec3(jit_in.texcoord * iResolution, i)) - vec3(0.5);
-		vec3 newRo = ro + rnd * aperture;
+		// Fibonacci spiral sampling with polygon-shaped aperture
+		// Temporal offset rotates the sample pattern each frame for smoother accumulation
+		float goldenAngle = 2.399963229728653;  // pi * (3 - sqrt(5))
+		float temporalOffset = fract(iTime * 60.0) * goldenAngle * 0.12;  // Subtle jitter over time
+		float angle = float(i) * goldenAngle + temporalOffset;
+		float radius = sqrt(float(i) / float(DoF)) * aperture;
+		// Shape the disc into a polygon (hexagon, pentagon, etc.)
+		radius *= polygonRadius(angle, apertureBlades, apertureRotation);
+		vec3 offset = camMat * vec3(cos(angle) * radius, sin(angle) * radius, 0.0);
+		vec3 newRo = ro + offset;
 		vec3 newRd = normalize(focalPoint - newRo);
 		// Raymarching
 		vec4 scene = map(newRo, newRd);
