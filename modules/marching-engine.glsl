@@ -96,7 +96,7 @@ vec4 getDist(vec3 pos){ // Compose your scene here
 	float glowPulse = 0.8 + 0.2 * sin(iTime * 2.0);
 	SceneResult glowSphere = sceneResult(
 		fSphere(glowPos, 0.05),
-		matGlow(vec3(0.3, 0.9, 1.0), 4.0 * glowPulse)  // Bright cyan glow
+		matGlow(vec3(0.3, 0.9, 1.0), 8.0 * glowPulse)  // Bright saturated cyan glow
 	);
 	scene = sceneMin(scene, glowSphere);
 	

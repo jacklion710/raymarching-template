@@ -152,24 +152,27 @@ vec3 getLight(vec3 hitPos, vec3 rd, vec3 mate, vec3 normals){
 	{   // Emissive area light from glowing sphere
 		float glowY = 0.12 + sin(iTime * 1.2) * 0.03;
 		vec3 emissivePos = vec3(-0.15, glowY, -0.3);
+		float emissiveRadius = 0.05;
 		float glowPulse = 0.8 + 0.2 * sin(iTime * 2.0);
 		vec3 emissiveCol = vec3(0.3, 0.9, 1.0);
-		float emissivePower = 12.0 * glowPulse;
+		float emissivePower = 10.0 * glowPulse;
 		
 		vec3 toEmissive = emissivePos - hitPos;
 		float distToEmissive = length(toEmissive);
-		vec3 emissiveDir = toEmissive / distToEmissive;
 		
-		// Wrap lighting for soft diffuse
-		float emissiveDiffuse = max(dot(normals, emissiveDir) * 0.6 + 0.4, 0.0);
-		
-		// Soft inverse square falloff
-		float emissiveAtt = 1.0 / (0.5 + distToEmissive * distToEmissive * 3.0);
-		
-		// Soft shadow
-		float emissiveShadow = getShadow(hitPos, emissiveDir, 2.0);
-		
-		col += emissiveDiffuse * emissiveAtt * emissiveShadow * emissiveCol * mate * emissivePower;
+		// Skip if we're on the emissive object itself (within 2x radius)
+		if (distToEmissive > emissiveRadius * 2.0) {
+			vec3 emissiveDir = toEmissive / distToEmissive;
+			
+			// Wrap lighting for soft diffuse spread
+			float emissiveDiffuse = max(dot(normals, emissiveDir) * 0.5 + 0.5, 0.0);
+			
+			// Soft inverse square falloff starting from sphere surface
+			float effectiveDist = max(distToEmissive - emissiveRadius, 0.01);
+			float emissiveAtt = 1.0 / (0.5 + effectiveDist * effectiveDist * 3.0);
+			
+			col += emissiveDiffuse * emissiveAtt * emissiveCol * mate * emissivePower;
+		}
 	}
 #endif
 
