@@ -16,32 +16,44 @@ vec3 getNorm(vec3 hitPos){ // Normal calculation for lighting
 	return normalize(vec3(shiftX, shiftY, shiftZ));
 }
 
-// O(1): Ambient occlusion calculation.
+// O(n): Ambient occlusion calculation.
 // hitPos: hit position
 // normal: normal vector
 float getAmbientOcclusion(vec3 hitPos, vec3 normal){
 	float occ = 0.0;
 	float sca = 1.0;
 	for(int i = 0; i < 5; i++){
-		// Reduced range: 0.01 to 0.05 (was 0.01 to 0.13)
 		float h = 0.01 + 0.04 * float(i) / 4.0;
 		float d = getDist(hitPos + normal * h).w;
-		occ += (h - d) * sca;
+		// Emissive objects don't contribute to occlusion (they emit light)
+		if (length(gMaterial.emission) < 1.0) {
+			occ += (h - d) * sca;
+		}
 		sca *= 0.5;
 	}
-	// Reduced intensity (was 6.0)
 	return clamp(1.0 - 3.0 * occ, 0.0, 1.0);
 }
 
-// O(1): Shadow calculation.
+// O(n): Shadow calculation with soft penumbra.
 // hitPos: hit position
-// rd: ray direction
+// rd: ray direction toward light
+// k: shadow softness (higher = softer penumbra)
 float getShadow(vec3 hitPos, vec3 rd, float k){
-	float sha = 1.;
+	float sha = 1.0;
 	for (float h = 0.01; h < 12.0; ){
 		float d = getDist(hitPos + rd * h).w;
 		if (d < MIN_DIST){
+			// Emissive objects don't block light - step past them
+			if (length(gMaterial.emission) > 1.0) {
+				h += 0.15;
+				continue;
+			}
 			return 0.0;
+		}
+		// Early emissive check during approach
+		if (d < 0.1 && length(gMaterial.emission) > 1.0) {
+			h += 0.15;
+			continue;
 		}
 		sha = min(sha, k * d / h);
 		h += d;
@@ -133,6 +145,11 @@ vec3 getLight(vec3 hitPos, vec3 rd, vec3 mate, vec3 normals){
 	float occ = getAmbientOcclusion(hitPos, normals);
 	float shadowSoftness = mix(16.0, 4.0, roughness);
 	float shadow = getShadow(hitPos, -lightDir, shadowSoftness);
+	
+	// Emissive objects cast weaker shadows (their own light fills the shadow area)
+	float emissionStrength = clamp(length(gMaterial.emission) / 3.0, 0.0, 1.0);
+	shadow = mix(shadow, 1.0, emissionStrength);
+	
 	vec3 ambient = vec3(0.3) * mate * occ;
 	
 	float lightIntensity = 0.8;
@@ -155,24 +172,23 @@ vec3 getLight(vec3 hitPos, vec3 rd, vec3 mate, vec3 normals){
 		float emissiveRadius = 0.05;
 		float glowPulse = 0.8 + 0.2 * sin(iTime * 2.0);
 		vec3 emissiveCol = vec3(0.3, 0.9, 1.0);
-		float emissivePower = 10.0 * glowPulse;
+		float emissivePower = 8.0 * glowPulse;
 		
 		vec3 toEmissive = emissivePos - hitPos;
 		float distToEmissive = length(toEmissive);
+		vec3 emissiveDir = toEmissive / max(distToEmissive, 0.001);
 		
-		// Skip if we're on the emissive object itself (within 2x radius)
-		if (distToEmissive > emissiveRadius * 2.0) {
-			vec3 emissiveDir = toEmissive / distToEmissive;
-			
-			// Wrap lighting for soft diffuse spread
-			float emissiveDiffuse = max(dot(normals, emissiveDir) * 0.5 + 0.5, 0.0);
-			
-			// Soft inverse square falloff starting from sphere surface
-			float effectiveDist = max(distToEmissive - emissiveRadius, 0.01);
-			float emissiveAtt = 1.0 / (0.5 + effectiveDist * effectiveDist * 3.0);
-			
-			col += emissiveDiffuse * emissiveAtt * emissiveCol * mate * emissivePower;
-		}
+		// Wrap lighting for soft diffuse spread
+		float emissiveDiffuse = max(dot(normals, emissiveDir) * 0.5 + 0.5, 0.0);
+		
+		// Smooth falloff starting from sphere surface (no hard cutoff)
+		float effectiveDist = max(distToEmissive - emissiveRadius, 0.001);
+		float emissiveAtt = 1.0 / (1.0 + effectiveDist * effectiveDist * 5.0);
+		
+		// Smoothly fade out when very close to emissive (on its surface)
+		float surfaceFade = smoothstep(emissiveRadius, emissiveRadius * 3.0, distToEmissive);
+		
+		col += emissiveDiffuse * emissiveAtt * surfaceFade * emissiveCol * mate * emissivePower;
 	}
 #endif
 
