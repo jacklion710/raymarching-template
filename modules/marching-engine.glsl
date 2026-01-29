@@ -100,6 +100,44 @@ vec4 getDist(vec3 pos){ // Compose your scene here
 	);
 	scene = sceneMin(scene, glowSphere);
 	
+	// Iridescent material showcase: 4 spheres in a row above main materials
+	float iriRadius = 0.1;
+	float iriSpacing = 0.3;
+	float iriY = 0.28 + sin(iTime * 0.7) * 0.015;  // Higher row
+	float iriZ = 0.4;  // Further back
+	
+	// 1. Soap bubble (leftmost)
+	vec3 iri1 = pos - vec3(-iriSpacing * 1.5, iriY, iriZ);
+	SceneResult soapBubble = sceneResult(
+		fSphere(iri1, iriRadius),
+		matSoapBubble()
+	);
+	scene = sceneMin(scene, soapBubble);
+	
+	// 2. Oil slick
+	vec3 iri2 = pos - vec3(-iriSpacing * 0.5, iriY + 0.01, iriZ - 0.05);
+	SceneResult oilSlick = sceneResult(
+		fSphere(iri2, iriRadius),
+		matOilSlick()
+	);
+	scene = sceneMin(scene, oilSlick);
+	
+	// 3. Beetle shell (green)
+	vec3 iri3 = pos - vec3(iriSpacing * 0.5, iriY + 0.02, iriZ - 0.1);
+	SceneResult beetleShell = sceneResult(
+		fSphere(iri3, iriRadius),
+		matBeetleShell(vec3(0.1, 0.4, 0.2))
+	);
+	scene = sceneMin(scene, beetleShell);
+	
+	// 4. Pearl (rightmost)
+	vec3 iri4 = pos - vec3(iriSpacing * 1.5, iriY + 0.03, iriZ - 0.15);
+	SceneResult pearl = sceneResult(
+		fSphere(iri4, iriRadius),
+		matPearl()
+	);
+	scene = sceneMin(scene, pearl);
+	
 	// Set global material for lighting to use
 	gMaterial = scene.mat;
 	

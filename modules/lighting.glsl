@@ -120,9 +120,17 @@ vec3 getSkyLight(vec3 hitPos, vec3 normals, float occ, vec3 mate, vec3 refRd, ve
 // normals: surface normal
 vec3 getLight(vec3 hitPos, vec3 rd, vec3 mate, vec3 normals){
 	
-	// Get metallic/roughness from global material
+	// Get material properties
 	float metallic = gMaterial.metallic;
 	float roughness = gMaterial.roughness;
+	float iridescence = gMaterial.iridescence;
+	
+	// Apply iridescence if present (view-dependent color shift)
+	if (iridescence > 0.0) {
+		float NdotV = max(dot(normals, -rd), 0.0);
+		vec3 iriColor = getIridescentColor(NdotV, mate);
+		mate = mix(mate, iriColor, iridescence);
+	}
 	
 	// Base vectors
 	vec3 lightDir = normalize(hitPos - lightPos);
@@ -138,7 +146,8 @@ vec3 getLight(vec3 hitPos, vec3 rd, vec3 mate, vec3 normals){
 	float specPower = mix(64.0, 4.0, roughness);
 	float spec = pow(NdotH, specPower);
 	// Metals tint specular with albedo, dielectrics have white specular
-	vec3 specColor = mix(vec3(0.5), mate, metallic);
+	// For iridescent materials, tint specular with the shifted color
+	vec3 specColor = mix(vec3(0.5), mate, max(metallic, iridescence * 0.5));
 	vec3 specular = specColor * spec;
 	
 	// Environment/ambient - softer shadows for rough surfaces

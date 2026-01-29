@@ -12,7 +12,7 @@ TODO:
     - Transparency/Refraction - Glass, water, crystals (requires ray bending)
     - Iridescence - Color shifts based on view angle (soap bubbles, oil slicks, beetle shells)
     - Toon/Cel Shading - Stylized stepped lighting for cartoon look
-- Fix emissive material problems and showcase it better
+- Support multiple emissive objects
 - Anti aliasing
 - Palette function and lighting for hetti styles
 - Glean/glimmer for metallic materials
