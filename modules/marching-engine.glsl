@@ -90,15 +90,17 @@ vec4 getDist(vec3 pos){ // Compose your scene here
 	);
 	scene = sceneSmin(scene, cube, 0.05);
 	
-	// Glowing sphere (uses centralized emissive definition)
-	vec4 emissiveSource = getEmissiveSource();
-	vec4 emissiveProps = getEmissiveProperties();
-	vec3 glowPos = pos - emissiveSource.xyz;
-	SceneResult glowSphere = sceneResult(
-		fSphere(glowPos, emissiveSource.w),
-		matGlow(emissiveProps.xyz, emissiveProps.w)
-	);
-	scene = sceneMin(scene, glowSphere);
+	// Emissive spheres (uses centralized multi-emissive definition)
+	for (int i = 0; i < NUM_EMISSIVES; i++) {
+		vec4 emissiveSource = getEmissiveSource(i);
+		vec4 emissiveProps = getEmissiveProperties(i);
+		vec3 glowPos = pos - emissiveSource.xyz;
+		SceneResult glowSphere = sceneResult(
+			fSphere(glowPos, emissiveSource.w),
+			matGlow(emissiveProps.xyz, emissiveProps.w)
+		);
+		scene = sceneMin(scene, glowSphere);
+	}
 	
 	// Iridescent material showcase: 4 spheres in a row above main materials
 	float iriRadius = 0.1;

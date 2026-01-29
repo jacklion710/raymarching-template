@@ -28,21 +28,49 @@ vec3 getIridescentColor(float viewAngle, vec3 baseColor) {
 	return mix(baseColor, rainbow, strength * 0.8);
 }
 
+// Number of emissive light sources in the scene
+#define NUM_EMISSIVES 3
+
 // Emissive light source info (centralized definition)
+// index: 0 to NUM_EMISSIVES-1
 // Returns: position in xyz, radius in w
-vec4 getEmissiveSource() {
-	float glowY = 0.12 + sin(iTime * 1.2) * 0.03;
-	vec3 pos = vec3(-0.15, glowY, -0.3);
+vec4 getEmissiveSource(int index) {
+	float baseY = 0.12;
 	float radius = 0.05;
-	return vec4(pos, radius);
+	float spacing = 0.35;
+	
+	// Row positioned above the cube, spread evenly
+	float rowZ = -0.5;
+	float rowY = 0.22 + sin(iTime * 1.2 + float(index) * 1.5) * 0.02;
+	
+	if (index == 0) {
+		// Red (left)
+		return vec4(-spacing, rowY, rowZ, radius);
+	} else if (index == 1) {
+		// Green (center)
+		return vec4(0.0, rowY + 0.01, rowZ + 0.05, radius);
+	} else {
+		// Blue/Cyan (right)
+		return vec4(spacing, rowY + 0.02, rowZ + 0.1, radius);
+	}
 }
 
 // Returns: emission color in xyz, intensity in w
-vec4 getEmissiveProperties() {
-	float glowPulse = 0.8 + 0.2 * sin(iTime * 2.0);
-	vec3 color = vec3(0.3, 0.9, 1.0);
+// index: 0 to NUM_EMISSIVES-1
+vec4 getEmissiveProperties(int index) {
+	float glowPulse = 0.8 + 0.2 * sin(iTime * 2.0 + float(index) * 2.0);
 	float intensity = 8.0 * glowPulse;
-	return vec4(color, intensity);
+	
+	if (index == 0) {
+		// Red
+		return vec4(1.0, 0.2, 0.1, intensity);
+	} else if (index == 1) {
+		// Green
+		return vec4(0.2, 1.0, 0.3, intensity);
+	} else {
+		// Blue/Cyan
+		return vec4(0.3, 0.9, 1.0, intensity);
+	}
 }
 
 // Create a basic dielectric (non-metal) material

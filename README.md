@@ -10,9 +10,9 @@ TODO:
 - Implement new materials
     - Subsurface Scattering - Light penetrating translucent surfaces (skin, wax, leaves)
     - Transparency/Refraction - Glass, water, crystals (requires ray bending)
-    - Iridescence - Color shifts based on view angle (soap bubbles, oil slicks, beetle shells)
     - Toon/Cel Shading - Stylized stepped lighting for cartoon look
 - Support multiple emissive objects
+- Iridescent material enhancements
 - Anti aliasing
 - Palette function and lighting for hetti styles
 - Glean/glimmer for metallic materials

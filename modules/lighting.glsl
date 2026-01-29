@@ -175,9 +175,10 @@ vec3 getLight(vec3 hitPos, vec3 rd, vec3 mate, vec3 normals){
 	// 	col += getPointLight(hitPos, pointPos, normals, rd, refRd, pointCol, mate);
 	// }
 	
-	{   // Emissive area light (uses centralized emissive definition)
-		vec4 source = getEmissiveSource();
-		vec4 props = getEmissiveProperties();
+	// Emissive area lights (loops through all centralized emissive definitions)
+	for (int i = 0; i < NUM_EMISSIVES; i++) {
+		vec4 source = getEmissiveSource(i);
+		vec4 props = getEmissiveProperties(i);
 		
 		vec3 emissivePos = source.xyz;
 		float emissiveRadius = source.w;
