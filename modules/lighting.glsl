@@ -136,17 +136,6 @@ vec3 getFirstReflection(vec3 ro, vec3 rd, vec3 bgCol){
 	}
 }
 
-// O(1): Lens flare calculation.
-// rd: ray direction
-// ro: ray origin
-// lightPos: light position
-// lightCol: light color (RGB intensity)
-vec3 getLensFlare(vec3 rd, vec3 ro, vec3 lightPos, vec3 lightCol, float expo){
-	float f = clamp(dot(rd, normalize(lightPos - ro)), 0.0, 1.0);
-	f = pow(f, expo);
-	return f * lightCol;
-}
-
 // O(1): Camera matrix calculation.
 // ro: ray origin
 // ta: target point
