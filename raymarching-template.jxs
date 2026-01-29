@@ -32,6 +32,7 @@
 <include source="rotate.glsl" program="fp" />
 <include source="hg_sdf.glsl" program="fp" />
 <include source="sdf.glsl" program="fp" />
+<include source="materials.glsl" program="fp" />
 <include source="fog.glsl" program="fp" />
 <include source="domain-repetition.glsl" program="fp" />
 <include source="lighting.glsl" program="fp" />

@@ -23,12 +23,14 @@ float getAmbientOcclusion(vec3 hitPos, vec3 normal){
 	float occ = 0.0;
 	float sca = 1.0;
 	for(int i = 0; i < 5; i++){
-		float h = 0.01 + 0.12 * float(i) / 4.0;
+		// Reduced range: 0.01 to 0.05 (was 0.01 to 0.13)
+		float h = 0.01 + 0.04 * float(i) / 4.0;
 		float d = getDist(hitPos + normal * h).w;
 		occ += (h - d) * sca;
 		sca *= 0.5;
 	}
-	return clamp(1.0 - 6.0 * occ, 0.0, 1.0);
+	// Reduced intensity (was 6.0)
+	return clamp(1.0 - 3.0 * occ, 0.0, 1.0);
 }
 
 // O(1): Shadow calculation.
@@ -54,66 +56,96 @@ float getShadow(vec3 hitPos, vec3 rd, float k){
 
 vec3 getPointLight(vec3 hitPos, vec3 lightPos, vec3 normals, vec3 rd, vec3 refRd, vec3 lightCol, vec3 mate){
 	
-	vec3 	lightDir 	= normalize(hitPos - lightPos);
-	vec3  	halfVec 	= normalize(lightDir - rd);
-	float 	dif 		= max(-dot(lightDir, normals), 0.);
-	float 	spe 		= max(-dot(lightDir, refRd), 0.);
-			spe 		= pow(spe, 100);
-	float 	sha 		= getShadow(hitPos, -lightDir, 17);
-	float 	dist 		= length(hitPos - lightPos);
-	float   att 		= 1. / (dist*dist);
-	float 	fresnel 	= pow(clamp(1. - dot(halfVec, lightDir), 0., 1.), 5.) * 0.95 + 0.05;
+	float metallic = gMaterial.metallic;
+	float roughness = gMaterial.roughness;
+	
+	vec3 lightDir = normalize(hitPos - lightPos);
+	vec3 halfVec = normalize(-lightDir - rd);
+	
+	// Diffuse - metals have reduced diffuse
+	float dif = max(-dot(lightDir, normals), 0.) * (1.0 - metallic * 0.9);
+	
+	// Specular
+	float NdotH = max(dot(normals, halfVec), 0.);
+	float specPower = mix(64.0, 4.0, roughness);
+	float spe = pow(NdotH, specPower);
+	vec3 specColor = mix(vec3(0.5), mate, metallic);
+	
+	// Softer shadows for rough surfaces (higher k = softer)
+	float shadowSoftness = mix(17.0, 4.0, roughness);
+	float sha = getShadow(hitPos, -lightDir, shadowSoftness);
+	float dist = length(hitPos - lightPos);
+	float att = 1. / (dist * dist);
 
-	return  vec3(mix(dif, spe, fresnel)) *sha*mate*att*lightCol;
+	return (dif * mate + spe * specColor) * sha * att * lightCol;
 }
 
 // O(1): Sky light calculation.
 // normals: normal vector
 vec3 getSkyLight(vec3 hitPos, vec3 normals, float occ, vec3 mate, vec3 refRd, vec3 col){
+	float roughness = gMaterial.roughness;
+	
 	float dif = sqrt(clamp(normals.y * 0.5 + 0.5, 0.0, 1.0));
 	float fresnel = pow(clamp(1. - dot(normals, -refRd), 0., 1.), 5.) * 0.95 + 0.05;
 	vec3 skyCol = vec3(0.7, .9, 1.0)*0.4;
 	col += dif * skyCol * occ * mate * (1.0 - fresnel);
+	
+	// Sky specular - skip reflection shadow for rough surfaces
 	float spe = smoothstep(-0.2, 0.2, refRd.y);
-	spe *= getShadow(hitPos, refRd, 0.5);
+	if (roughness < 0.5) {
+		spe *= getShadow(hitPos, refRd, 0.5);
+	}
+	// Reduce sky specular for rough surfaces
+	spe *= (1.0 - roughness);
 	col += spe * skyCol * occ * fresnel;
 	return col;
 }
 
-// O(1): Lighting calculation.
+// O(1): Lighting calculation with PBR metallic support.
 // hitPos: hit position
 // rd: ray direction
-vec3 getLight(vec3 hitPos, vec3 rd, vec3 mate, vec3 normals){ // Lighting calculation
+// mate: albedo color (legacy parameter, also available via gMaterial)
+// normals: surface normal
+vec3 getLight(vec3 hitPos, vec3 rd, vec3 mate, vec3 normals){
 	
-	// Base Phong lighting (existing path)
+	// Get metallic/roughness from global material
+	float metallic = gMaterial.metallic;
+	float roughness = gMaterial.roughness;
+	
+	// Base vectors
 	vec3 lightDir = normalize(hitPos - lightPos);
-	float direct = max(-dot(lightDir, normals), 0.0);
-	
 	vec3 refRd = reflect(rd, normals);
-	float reflected = max(-dot(lightDir, refRd), 0.0);
-
-	float lightIntensity = 0.3;
-
-	reflected = pow(reflected, 100.0);
-	vec3 ambient = vec3(0.5);
+	vec3 halfVec = normalize(-lightDir - rd);
+	
+	// Diffuse: metals have reduced diffuse
+	float NdotL = max(-dot(lightDir, normals), 0.0);
+	vec3 diffuse = mate * NdotL * (1.0 - metallic * 0.9);
+	
+	// Specular: roughness controls sharpness
+	float NdotH = max(dot(normals, halfVec), 0.0);
+	float specPower = mix(64.0, 4.0, roughness);
+	float spec = pow(NdotH, specPower);
+	// Metals tint specular with albedo, dielectrics have white specular
+	vec3 specColor = mix(vec3(0.5), mate, metallic);
+	vec3 specular = specColor * spec;
+	
+	// Environment/ambient - softer shadows for rough surfaces
 	float occ = getAmbientOcclusion(hitPos, normals);
-	float shadow = getShadow(hitPos, -lightDir, 16.0);
-
-	// Apply material albedo here so all light paths behave consistently.
-	vec3 col = (vec3(direct + reflected) * lightIntensity * shadow + ambient * occ) * mate;
+	float shadowSoftness = mix(16.0, 4.0, roughness);
+	float shadow = getShadow(hitPos, -lightDir, shadowSoftness);
+	vec3 ambient = vec3(0.3) * mate * occ;
+	
+	float lightIntensity = 0.8;
+	vec3 col = (diffuse + specular) * lightIntensity * shadow + ambient;
 
 #if USE_POINT_LIGHT
-	// Point light using getPointLight(); mate is set to 1 because albedo is applied outside getLight().
 	{   // Sky light
 		col += getSkyLight(hitPos, normals, occ, mate, refRd, col);
 	}
 
 	{   // Point light
-		// Blue point light near the cube (kept outside geometry)
-		// Box spans roughly x,z ∈ [-0.1,0.1] and y up to ~0.28, so keep this outside and above.
-		vec3 pointPos = vec3(0.35, 0.35, 0.0);
-		// Boosted because final shading multiplies by material albedo.
-		vec3 pointCol = vec3(0.9, 0.2, 0.2) * 20.0;
+		vec3 pointPos = vec3(0.5, 0.4, 0.2);
+		vec3 pointCol = vec3(1.0, 0.9, 0.8) * 1.0;
 		col += getPointLight(hitPos, pointPos, normals, rd, refRd, pointCol, mate);
 	}
 #endif

@@ -8,7 +8,7 @@ in jit_PerVertex {
 layout (location = 0) out vec4 outColor;
 
 // DoF toggle: comment out to disable depth of field entirely
-#define DOF_ENABLED
+// #define DOF_ENABLED
 
 #ifdef DOF_ENABLED
 	#define DOF_SAMPLES 4

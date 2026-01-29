@@ -75,15 +75,32 @@ vec3 getDoFOffset(int sampleIndex, int sampleCount, mat3 camMat, float aperture,
 // Returns: final shaded color
 vec3 shadeHit(vec3 hitPos, vec3 rd, vec3 material, vec3 bgCol) {
 	vec3 normals = getNorm(hitPos);
-	float fresnel = pow(clamp(1.0 - dot(normals, -rd), 0.0, 1.0), 5.0);
+	
+	// Get material properties
+	float metallic = gMaterial.metallic;
+	float roughness = gMaterial.roughness;
+	
+	// Fresnel with metallic influence (Schlick approximation)
+	// Metals have high base reflectivity, dielectrics have low (~0.04)
+	float F0 = mix(0.04, 0.9, metallic);
+	float cosTheta = max(dot(normals, -rd), 0.0);
+	float fresnel = F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
+	
+	// Roughness heavily reduces reflection (rough surfaces scatter light)
+	float roughnessDampen = (1.0 - roughness) * (1.0 - roughness);  // Quadratic falloff
+	float reflectionStrength = fresnel * roughnessDampen;
+	
+	// Direct lighting - reduced for highly reflective surfaces
+	vec3 col = getLight(hitPos, rd, material, normals) * (1.0 - reflectionStrength * 0.7);
 
-	// Direct lighting with fresnel falloff
-	vec3 col = getLight(hitPos, rd, material, normals) * ((1.0 - fresnel) * 0.95 + 0.05);
-
-	// Reflection
-	vec3 R = reflect(rd, normals);
-	vec3 reflRo = hitPos + normals * (MIN_DIST * 4.0);
-	col += getFirstReflection(reflRo, R, bgCol) * fresnel;
+	// Skip reflections entirely for very rough surfaces (roughness > 0.85)
+	if (roughness < 0.85) {
+		vec3 R = reflect(rd, normals);
+		vec3 reflRo = hitPos + normals * (MIN_DIST * 4.0);
+		vec3 reflColor = getFirstReflection(reflRo, R, bgCol);
+		vec3 reflTint = mix(vec3(1.0), material, metallic * 0.5);  // Subtle tint for metals
+		col += reflColor * reflTint * reflectionStrength;
+	}
 
 	return col;
 }

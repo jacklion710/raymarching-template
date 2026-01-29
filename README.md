@@ -6,4 +6,9 @@ Launch point for new shader compositions. The goal is to provide the boilerplate
 
 NOTE: Later it may be nice to add controls to enable/disable different lighting properties in getLight()
 
-Left off on Raymarching 4 - 1:56:00
+TODO:
+- Implement new materials
+    - Fix rubber
+- Anti aliasing
+- Palette function and lighting for hetti styles
+- Glean/glimmer for metallic materials
