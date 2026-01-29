@@ -79,14 +79,14 @@ vec4 getDist(vec3 pos){ // Compose your scene here
 	);
 	scene = sceneMin(scene, s5);
 	
-	// Gold rotating cube
+	// Gold rotating cube (polished gold finish)
 	float cubeY = 0.08 + sin(iTime * 0.8) * 0.04;
 	vec3 cubePos = pos - vec3(0.0, cubeY, -0.45);
 	mat3 rotMat = getRotationMatrix(normalize(vec3(1.0, 1.0, 1.0)), iTime * 0.9);
 	cubePos = rotMat * cubePos;
 	SceneResult cube = sceneResult(
 		fBox(cubePos, vec3(0.06)),
-		matMetal(vec3(1.0, 0.76, 0.33))  // Gold color
+		matGold()
 	);
 	scene = sceneSmin(scene, cube, 0.05);
 	

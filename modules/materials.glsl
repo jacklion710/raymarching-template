@@ -126,6 +126,11 @@ Material matMetal(vec3 color) {
 	return Material(color, 1.0, 0.3, vec3(0.0), 0.0, 0.0, vec3(1.0));
 }
 
+// Polished gold - very shiny with warm reflections
+Material matGold() {
+	return Material(vec3(1.0, 0.76, 0.33), 1.0, 0.05, vec3(0.0), 0.0, 0.0, vec3(1.0));
+}
+
 Material matRoughMetal(vec3 color) {
 	return Material(color, 1.0, 0.7, vec3(0.0), 0.0, 0.0, vec3(1.0));
 }
