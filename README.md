@@ -11,7 +11,6 @@ TODO:
     - Subsurface Scattering - Light penetrating translucent surfaces (skin, wax, leaves)
     - Transparency/Refraction - Glass, water, crystals (requires ray bending)
     - Toon/Cel Shading - Stylized stepped lighting for cartoon look
-- Support multiple emissive objects
 - Iridescent material enhancements
 - Anti aliasing
 - Palette function and lighting for hetti styles

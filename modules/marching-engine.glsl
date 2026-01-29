@@ -81,7 +81,7 @@ vec4 getDist(vec3 pos){ // Compose your scene here
 	
 	// Gold rotating cube
 	float cubeY = 0.08 + sin(iTime * 0.8) * 0.04;
-	vec3 cubePos = pos - vec3(0.15, cubeY, -0.35);
+	vec3 cubePos = pos - vec3(0.0, cubeY, -.85);
 	mat3 rotMat = getRotationMatrix(normalize(vec3(1.0, 1.0, 1.0)), iTime * 0.9);
 	cubePos = rotMat * cubePos;
 	SceneResult cube = sceneResult(
@@ -102,11 +102,49 @@ vec4 getDist(vec3 pos){ // Compose your scene here
 		scene = sceneMin(scene, glowSphere);
 	}
 	
+	// Subsurface scattering showcase: 4 spheres in a row (highest row)
+	float sssRadius = 0.1;
+	float sssSpacing = 0.3;
+	float sssY = 0.42 + sin(iTime * 0.6) * 0.01;
+	float sssZ = 0.65;
+	
+	// 1. Wax (cream colored)
+	vec3 sss1 = pos - vec3(-sssSpacing * 1.5, sssY, sssZ);
+	SceneResult waxSphere = sceneResult(
+		fSphere(sss1, sssRadius),
+		matWax(vec3(0.95, 0.9, 0.8))
+	);
+	scene = sceneMin(scene, waxSphere);
+	
+	// 2. Skin
+	vec3 sss2 = pos - vec3(-sssSpacing * 0.5, sssY + 0.01, sssZ - 0.05);
+	SceneResult skinSphere = sceneResult(
+		fSphere(sss2, sssRadius),
+		matSkin(vec3(0.9, 0.7, 0.6))
+	);
+	scene = sceneMin(scene, skinSphere);
+	
+	// 3. Jade (green)
+	vec3 sss3 = pos - vec3(sssSpacing * 0.5, sssY + 0.02, sssZ - 0.1);
+	SceneResult jadeSphere = sceneResult(
+		fSphere(sss3, sssRadius),
+		matJade(vec3(0.2, 0.6, 0.3))
+	);
+	scene = sceneMin(scene, jadeSphere);
+	
+	// 4. Marble (rightmost)
+	vec3 sss4 = pos - vec3(sssSpacing * 1.5, sssY + 0.03, sssZ - 0.15);
+	SceneResult marbleSphere = sceneResult(
+		fSphere(sss4, sssRadius),
+		matMarble()
+	);
+	scene = sceneMin(scene, marbleSphere);
+	
 	// Iridescent material showcase: 4 spheres in a row above main materials
 	float iriRadius = 0.1;
 	float iriSpacing = 0.3;
-	float iriY = 0.28 + sin(iTime * 0.7) * 0.015;  // Higher row
-	float iriZ = 0.4;  // Further back
+	float iriY = 0.28 + sin(iTime * 0.7) * 0.015;
+	float iriZ = 0.4;
 	
 	// 1. Soap bubble (leftmost)
 	vec3 iri1 = pos - vec3(-iriSpacing * 1.5, iriY, iriZ);

@@ -124,6 +124,8 @@ vec3 getLight(vec3 hitPos, vec3 rd, vec3 mate, vec3 normals){
 	float metallic = gMaterial.metallic;
 	float roughness = gMaterial.roughness;
 	float iridescence = gMaterial.iridescence;
+	float subsurface = gMaterial.subsurface;
+	vec3 subsurfaceCol = gMaterial.subsurfaceCol;
 	
 	// Apply iridescence if present (view-dependent color shift)
 	if (iridescence > 0.0) {
@@ -163,6 +165,36 @@ vec3 getLight(vec3 hitPos, vec3 rd, vec3 mate, vec3 normals){
 	
 	float lightIntensity = 0.8;
 	vec3 col = (diffuse + specular) * lightIntensity * shadow + ambient;
+	
+	// Subsurface scattering: light penetrating and scattering inside the material
+	if (subsurface > 0.0) {
+		// Estimate thickness by sampling SDF behind the surface
+		float thickness = 0.0;
+		vec3 sampleDir = -normals;  // Sample into the object
+		for (int i = 1; i <= 4; i++) {
+			float sampleDist = 0.03 * float(i);
+			float d = getDist(hitPos + sampleDir * sampleDist).w;
+			thickness += max(0.0, -d);
+		}
+		thickness = clamp(thickness * 3.0, 0.0, 1.0);
+		
+		// Light transmission through thin areas (back-lighting effect)
+		float NdotL_back = max(dot(lightDir, normals), 0.0);
+		float transmission = (1.0 - thickness) * NdotL_back;
+		
+		// Wrap lighting for soft light bleeding around edges
+		float wrap = max(0.0, (dot(-lightDir, normals) + 0.6) / 1.6);
+		
+		// View-dependent scattering (stronger at grazing angles)
+		float NdotV = max(dot(normals, -rd), 0.0);
+		float edgeScatter = pow(1.0 - NdotV, 2.0) * 0.5;
+		
+		float scatter = max(wrap, transmission) + edgeScatter;
+		
+		// Add subsurface contribution with boosted intensity
+		vec3 sssColor = subsurfaceCol * scatter * subsurface * lightIntensity * 1.5;
+		col += sssColor;
+	}
 
 #if USE_POINT_LIGHT
 	// {   // Sky light
