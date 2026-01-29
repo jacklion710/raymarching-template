@@ -90,6 +90,12 @@ void getPostProcessing(inout vec3 col, vec3 rd, vec3 ro, vec3 bgCol, float dist,
 	// MATRIX GREEN (green tint in shadows and midtones)
 	// col = liftGammaGain(col, vec3(-0.02, 0.03, -0.02), vec3(0.95, 1.05, 0.95), vec3(0.9, 1.0, 0.9));
 	
+	// Local contrast / sharpening approximation
+	col = localContrast(col, 0.7);  // 0.3 = subtle, 0.6 = strong
+	
+	// Chromatic aberration - RGB fringing at edges (lens effect)
+	// col = chromaticAberration(col, uv, 0.04);  // 0.005 = subtle, 0.03 = strong
+	
 	// Vignette - darkens edges for cinematic focus
 	vec2 vigUV = uv - 0.5;  // Center-relative coords
 	col = vignette(col, vigUV, 0.4, 0.7);

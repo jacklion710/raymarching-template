@@ -107,19 +107,35 @@ vec3 filmGrain(vec3 col, vec2 uv, float time, float amount) {
 	return col + vec3(noise);
 }
 
-// O(1): Chromatic aberration effect.
-// Simulates RGB color fringing at screen edges (lens imperfection).
-// Uses texture sampling offsets - call before other effects.
+// O(1): Chromatic aberration effect (single-pass approximation).
+// Creates visible RGB color fringing at screen edges.
+// True CA requires texture sampling; this adds colored fringes additively.
+// col: input color
 // uv: normalized screen coordinates (0 to 1)
-// center: screen center (typically 0.5, 0.5)
-// strength: aberration intensity (0.001 = subtle, 0.01 = strong)
-// Note: Returns offset UVs for R, G, B channels respectively
-vec3 chromaticAberrationOffsets(vec2 uv, vec2 center, float strength) {
+// strength: aberration intensity (0.1 = subtle, 0.5 = moderate, 1.0 = strong)
+vec3 chromaticAberration(vec3 col, vec2 uv, float strength) {
+	vec2 center = vec2(0.5);
 	vec2 dir = uv - center;
 	float dist = length(dir);
-	vec2 offset = dir * dist * strength;
-	// Returns: x = red offset multiplier, y = green (none), z = blue offset multiplier
-	return vec3(-1.0, 0.0, 1.0) * length(offset);
+	vec2 normDir = normalize(dir + 0.0001);
+	
+	// Radial falloff - quadratic for more edge emphasis
+	float falloff = dist * dist * 2.0;
+	
+	// Create visible color fringes at edges
+	// Red shifts outward, blue shifts inward (like a prism)
+	float redAmount = falloff * strength * max(0.0, dot(normDir, normalize(uv - center)));
+	float blueAmount = falloff * strength * 0.8;
+	
+	// Add colored fringes (additive for visibility)
+	col.r += redAmount * 0.15;
+	col.b += blueAmount * 0.1;
+	
+	// Subtract opposite to create separation effect
+	col.r -= blueAmount * 0.05;
+	col.b -= redAmount * 0.08;
+	
+	return clamp(col, 0.0, 1.0);
 }
 
 // O(1): Dithering to reduce color banding.
@@ -136,14 +152,18 @@ vec3 dither(vec3 col, vec2 uv, float bitDepth) {
 	return col + vec3(triNoise);
 }
 
-// O(1): Sharpening filter (unsharp mask approximation).
-// Enhances edge detail. Best applied after blur/fog effects.
-// col: center pixel color
-// neighbors: average of surrounding pixels (requires sampling)
-// amount: sharpening strength (0.0 = none, 1.0 = strong)
-vec3 sharpen(vec3 col, vec3 neighbors, float amount) {
-	vec3 sharpened = col + (col - neighbors) * amount;
-	return clamp(sharpened, 0.0, 1.0);
+// O(1): Local contrast enhancement (sharpening approximation).
+// True sharpening requires neighbor sampling (multi-pass rendering).
+// This approximation enhances perceived sharpness via local contrast.
+// col: input color
+// amount: enhancement strength (0.0 = none, 0.3 = subtle, 1.0 = strong)
+vec3 localContrast(vec3 col, float amount) {
+	// Enhance deviation from middle gray to increase local contrast
+	float luma = dot(col, vec3(0.2126, 0.7152, 0.0722));
+	vec3 enhanced = col + (col - vec3(luma)) * amount * 0.5;
+	// Also boost overall micro-contrast
+	enhanced = mix(enhanced, enhanced * enhanced * (3.0 - 2.0 * enhanced), amount * 0.3);
+	return clamp(enhanced, 0.0, 1.0);
 }
 
 // O(1): Split toning effect.
