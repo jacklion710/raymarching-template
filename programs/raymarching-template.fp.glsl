@@ -44,9 +44,13 @@ void main(void) {
 		col += getFirstReflection(reflRo, R, bgCol) * fresnel;
 	}
 
-	// col = distanceFog(col, bgCol, dist);
+	// Lens flare
+	col += getLensFlare(rd, ro, lightPos, vec3(0.9, 0.2, 8.0));
 
-	// Post-processing.
+	// Distance fog
+	col = distanceFog(col, bgCol, dist);
+
+	// Post-processing
 	col = toneMapping(col);// Tone mapping
 	col = gammaCorrection(col);    // Apply gamma last (display transform)
 
