@@ -784,7 +784,7 @@
                     "numinlets": 1,
                     "numoutlets": 2,
                     "outlettype": [ "jit_matrix", "" ],
-                    "patching_rect": [ 192.5, 386.0, 247.0, 146.0 ],
+                    "patching_rect": [ 193.0, 386.0, 445.0, 248.0 ],
                     "sync": 1
                 }
             },

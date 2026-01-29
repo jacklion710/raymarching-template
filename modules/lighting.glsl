@@ -113,7 +113,7 @@ vec3 getLight(vec3 hitPos, vec3 rd, vec3 mate, vec3 normals){ // Lighting calcul
 		// Box spans roughly x,z ∈ [-0.1,0.1] and y up to ~0.28, so keep this outside and above.
 		vec3 pointPos = vec3(0.35, 0.35, 0.0);
 		// Boosted because final shading multiplies by material albedo.
-		vec3 pointCol = vec3(0.9, 0.2, 8.0) * 20.0;
+		vec3 pointCol = vec3(0.9, 0.2, 0.2) * 20.0;
 		col += getPointLight(hitPos, pointPos, normals, rd, refRd, pointCol, mate);
 	}
 #endif

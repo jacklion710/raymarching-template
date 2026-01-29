@@ -3,7 +3,7 @@
 vec4 getDist(vec3 pos){ // Compose your scene here
 	// Plane with a cube moving in the y axis
 	// Non-black albedo so colored lights are visible on it.
-	vec4 plane = vec4(vec3(0.18), fPlane(pos, vec3(0.0, 1.0, 0.0), 0.0));
+	vec4 plane = vec4(vec3(0.1), fPlane(pos, vec3(0.0, 1.0, 0.0), 0.0));
 
 	// Box motion: intersects plane, then levitates above it.
 	float boxAnim01 = 0.5 + 0.5 * sin(iTime * 0.8); // [0..1]
