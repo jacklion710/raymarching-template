@@ -76,9 +76,10 @@ vec3 getDoFOffset(int sampleIndex, int sampleCount, mat3 camMat, float aperture,
 vec3 shadeHit(vec3 hitPos, vec3 rd, vec3 material, vec3 bgCol) {
 	vec3 normals = getNorm(hitPos);
 	
-	// Get material properties
+	// Get material properties - save these before any calls that might overwrite gMaterial
 	float metallic = gMaterial.metallic;
 	float roughness = gMaterial.roughness;
+	vec3 emission = gMaterial.emission;  // Save emission before getLight overwrites gMaterial
 	
 	// Fresnel with metallic influence (Schlick approximation)
 	// Metals have high base reflectivity, dielectrics have low (~0.04)
@@ -90,17 +91,25 @@ vec3 shadeHit(vec3 hitPos, vec3 rd, vec3 material, vec3 bgCol) {
 	float roughnessDampen = (1.0 - roughness) * (1.0 - roughness);  // Quadratic falloff
 	float reflectionStrength = fresnel * roughnessDampen;
 	
-	// Direct lighting - reduced for highly reflective surfaces
-	vec3 col = getLight(hitPos, rd, material, normals) * (1.0 - reflectionStrength * 0.7);
+	// Calculate emission strength (0 = no glow, 1 = full glow)
+	float emissionStrength = clamp(length(emission) / 3.0, 0.0, 1.0);
+	
+	// Direct lighting - reduced for emissive and highly reflective surfaces
+	// Emissive objects don't need external lighting - they glow uniformly
+	float lightingFactor = (1.0 - reflectionStrength * 0.7) * (1.0 - emissionStrength);
+	vec3 col = getLight(hitPos, rd, material, normals) * lightingFactor;
 
-	// Skip reflections entirely for very rough surfaces (roughness > 0.85)
-	if (roughness < 0.85) {
+	// Skip reflections for rough or highly emissive surfaces
+	if (roughness < 0.85 && emissionStrength < 0.5) {
 		vec3 R = reflect(rd, normals);
 		vec3 reflRo = hitPos + normals * (MIN_DIST * 4.0);
 		vec3 reflColor = getFirstReflection(reflRo, R, bgCol);
-		vec3 reflTint = mix(vec3(1.0), material, metallic * 0.5);  // Subtle tint for metals
+		vec3 reflTint = mix(vec3(1.0), material, metallic * 0.5);
 		col += reflColor * reflTint * reflectionStrength;
 	}
+	
+	// Add emission (self-illumination) - this is the dominant color for glowing objects
+	col += emission;
 
 	return col;
 }

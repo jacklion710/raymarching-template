@@ -79,9 +79,9 @@ vec4 getDist(vec3 pos){ // Compose your scene here
 	);
 	scene = sceneMin(scene, s5);
 	
-	// Bonus: Gold rotating cube in front
+	// Gold rotating cube
 	float cubeY = 0.08 + sin(iTime * 0.8) * 0.04;
-	vec3 cubePos = pos - vec3(0.0, cubeY, -0.4);
+	vec3 cubePos = pos - vec3(0.15, cubeY, -0.35);
 	mat3 rotMat = getRotationMatrix(normalize(vec3(1.0, 1.0, 1.0)), iTime * 0.9);
 	cubePos = rotMat * cubePos;
 	SceneResult cube = sceneResult(
@@ -89,6 +89,16 @@ vec4 getDist(vec3 pos){ // Compose your scene here
 		matMetal(vec3(1.0, 0.76, 0.33))  // Gold color
 	);
 	scene = sceneSmin(scene, cube, 0.05);
+	
+	// Glowing cyan sphere (floating, pulsing)
+	float glowY = 0.12 + sin(iTime * 1.2) * 0.03;
+	vec3 glowPos = pos - vec3(-0.15, glowY, -0.3);
+	float glowPulse = 0.8 + 0.2 * sin(iTime * 2.0);
+	SceneResult glowSphere = sceneResult(
+		fSphere(glowPos, 0.05),
+		matGlow(vec3(0.3, 0.9, 1.0), 4.0 * glowPulse)  // Bright cyan glow
+	);
+	scene = sceneMin(scene, glowSphere);
 	
 	// Set global material for lighting to use
 	gMaterial = scene.mat;

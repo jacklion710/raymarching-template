@@ -8,7 +8,11 @@ NOTE: Later it may be nice to add controls to enable/disable different lighting 
 
 TODO:
 - Implement new materials
-    - Fix rubber
+    - Subsurface Scattering - Light penetrating translucent surfaces (skin, wax, leaves)
+    - Transparency/Refraction - Glass, water, crystals (requires ray bending)
+    - Iridescence - Color shifts based on view angle (soap bubbles, oil slicks, beetle shells)
+    - Toon/Cel Shading - Stylized stepped lighting for cartoon look
+- Fix emissive material problems and showcase it better
 - Anti aliasing
 - Palette function and lighting for hetti styles
 - Glean/glimmer for metallic materials

@@ -139,14 +139,37 @@ vec3 getLight(vec3 hitPos, vec3 rd, vec3 mate, vec3 normals){
 	vec3 col = (diffuse + specular) * lightIntensity * shadow + ambient;
 
 #if USE_POINT_LIGHT
-	{   // Sky light
-		col += getSkyLight(hitPos, normals, occ, mate, refRd, col);
-	}
+	// {   // Sky light
+	// 	col += getSkyLight(hitPos, normals, occ, mate, refRd, col);
+	// }
 
-	{   // Point light
-		vec3 pointPos = vec3(0.5, 0.4, 0.2);
-		vec3 pointCol = vec3(1.0, 0.9, 0.8) * 1.0;
-		col += getPointLight(hitPos, pointPos, normals, rd, refRd, pointCol, mate);
+	// {   // Point light
+	// 	vec3 pointPos = vec3(0.5, 0.4, 0.2);
+	// 	vec3 pointCol = vec3(1.0, 0.9, 0.8) * 1.0;
+	// 	col += getPointLight(hitPos, pointPos, normals, rd, refRd, pointCol, mate);
+	// }
+	
+	{   // Emissive area light from glowing sphere
+		float glowY = 0.12 + sin(iTime * 1.2) * 0.03;
+		vec3 emissivePos = vec3(-0.15, glowY, -0.3);
+		float glowPulse = 0.8 + 0.2 * sin(iTime * 2.0);
+		vec3 emissiveCol = vec3(0.3, 0.9, 1.0);
+		float emissivePower = 12.0 * glowPulse;
+		
+		vec3 toEmissive = emissivePos - hitPos;
+		float distToEmissive = length(toEmissive);
+		vec3 emissiveDir = toEmissive / distToEmissive;
+		
+		// Wrap lighting for soft diffuse
+		float emissiveDiffuse = max(dot(normals, emissiveDir) * 0.6 + 0.4, 0.0);
+		
+		// Soft inverse square falloff
+		float emissiveAtt = 1.0 / (0.5 + distToEmissive * distToEmissive * 3.0);
+		
+		// Soft shadow
+		float emissiveShadow = getShadow(hitPos, emissiveDir, 2.0);
+		
+		col += emissiveDiffuse * emissiveAtt * emissiveShadow * emissiveCol * mate * emissivePower;
 	}
 #endif
 
@@ -163,8 +186,14 @@ vec3 getFirstReflection(vec3 ro, vec3 rd, vec3 bgCol){
 		return bgCol;
 	} else {
 		vec3 hitPos = ro + rd * dist;
+		// Save emission before getLight overwrites gMaterial
+		vec3 emission = gMaterial.emission;
+		float emissionStrength = clamp(length(emission) / 3.0, 0.0, 1.0);
+		
 		vec3 normals = getNorm(hitPos);
-		return getLight(hitPos, rd, material, normals);
+		// Reduce lighting for emissive objects (they glow uniformly)
+		vec3 lighting = getLight(hitPos, rd, material, normals) * (1.0 - emissionStrength);
+		return lighting + emission;
 	}
 }
 
