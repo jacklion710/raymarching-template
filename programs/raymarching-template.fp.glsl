@@ -45,7 +45,7 @@ void main(void) {
 	}
 
 	// Lens flare
-	col += getLensFlare(rd, ro, lightPos, vec3(0.9, 0.2, 8.0));
+	col += getLensFlare(rd, ro, lightPos, vec3(0.9, 0.2, 8.0), 10.0) * 0.5;
 
 	// Distance fog
 	col = distanceFog(col, bgCol, dist);
