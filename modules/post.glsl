@@ -9,7 +9,7 @@ vec3 getEmissiveGlow(vec3 ro, vec3 rd, float sceneDepth) {
 		
 		vec3 emissivePos = source.xyz;
 		float emissiveRadius = source.w;
-		vec3 emissiveCol = props.xyz * props.w * 0.4;
+		vec3 emissiveCol = props.xyz * props.w * 0.15;  // Reduced glow
 		
 		// Find closest point on ray to emissive center
 		vec3 toEmissive = emissivePos - ro;
@@ -20,11 +20,11 @@ vec3 getEmissiveGlow(vec3 ro, vec3 rd, float sceneDepth) {
 		float distToEmissive = length(closestPoint - emissivePos);
 		
 		// Soft glow falloff
-		float glowRadius = emissiveRadius * 6.0;
+		float glowRadius = emissiveRadius * 4.0;  // Tighter glow radius
 		float glow = 1.0 - smoothstep(0.0, glowRadius, distToEmissive);
 		glow = glow * glow;
 		
-		totalGlow += emissiveCol * glow * 0.3;
+		totalGlow += emissiveCol * glow * 0.2;  // Reduced multiplier
 	}
 	
 	return totalGlow;

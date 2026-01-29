@@ -31,36 +31,36 @@ vec3 getIridescentColor(float viewAngle, vec3 baseColor) {
 }
 
 // Number of emissive light sources in the scene
-#define NUM_EMISSIVES 4
+#define NUM_EMISSIVES 6
 
 // Emissive light source info (centralized definition)
 // index: 0 to NUM_EMISSIVES-1
 // Returns: position in xyz, radius in w
 vec4 getEmissiveSource(int index) {
-	float baseY = 0.12;
-	float radius = 0.05;
-	float spacing = 0.45;
-	
-	// Row positioned at cube's z position
-	float rowZ = -0.35;
-	float rowY = 0.22 + sin(iTime * 1.2 + float(index) * 1.5) * 0.02;
+	// SSS sphere positions (must match marching-engine.glsl)
+	float sssSpacing = 0.3;
+	float sssY = 0.42 + sin(iTime * 0.6) * 0.01;
+	float sssZ = 0.65;
 	
 	if (index == 0) {
-		// Red (left)
-		return vec4(-spacing, rowY + 0.11, rowZ - 0.45, radius);
+		// Red - inside SKIN sphere (blood glow)
+		return vec4(-sssSpacing * 0.5, sssY + 0.01, sssZ - 0.05, 0.03);
 	} else if (index == 1) {
-		// Green (center) - more negative z
-		return vec4(0.0, rowY + 0.21, rowZ - 0.55, radius);
+		// Green - STANDALONE (keep original position)
+		float rowY = 0.22 + sin(iTime * 1.2 + 1.5) * 0.02;
+		return vec4(0.0, rowY + 0.21, -0.9, 0.05);
 	} else if (index == 2) {
-		// Blue/Cyan (right)
-		return vec4(spacing, rowY + 0.11, rowZ - 0.45, radius);
+		// Blue/Cyan - inside MARBLE sphere (cool glow)
+		return vec4(sssSpacing * 1.5, sssY + 0.03, sssZ - 0.15, 0.03);
+	} else if (index == 3) {
+		// Warm candle - inside WAX sphere
+		return vec4(-sssSpacing * 1.5, sssY, sssZ, 0.03);
+	} else if (index == 4) {
+		// Green/teal - inside JADE sphere (mystical glow)
+		return vec4(sssSpacing * 0.5, sssY + 0.02, sssZ - 0.1, 0.03);
 	} else {
-		// Interior light inside wax sphere (SSS demo)
-		// Position matches the wax sphere center
-		float sssY = 0.42 + sin(iTime * 0.6) * 0.01;
-		float sssZ = 0.65;
-		float sssSpacing = 0.3;
-		return vec4(-sssSpacing * 1.5, sssY, sssZ, 0.03);  // Small radius, inside wax
+		// Spotlight position marker (dim reference)
+		return vec4(0.8, 0.5, -0.3, 0.02);
 	}
 }
 
@@ -68,22 +68,27 @@ vec4 getEmissiveSource(int index) {
 // index: 0 to NUM_EMISSIVES-1
 vec4 getEmissiveProperties(int index) {
 	float glowPulse = 0.8 + 0.2 * sin(iTime * 2.0 + float(index) * 2.0);
-	float intensity = 4.0 * glowPulse;  // Dimmed from 8.0
+	float flicker = 0.9 + 0.1 * sin(iTime * 8.0) * sin(iTime * 12.0 + 1.0);
+	float interiorIntensity = 6.0 * flicker;  // Moderate for visible SSS
 	
 	if (index == 0) {
-		// Red
-		return vec4(1.0, 0.2, 0.1, intensity);
+		// Red - inside skin (blood/flesh glow)
+		return vec4(1.0, 0.15, 0.1, interiorIntensity);
 	} else if (index == 1) {
-		// Green
-		return vec4(0.2, 1.0, 0.3, intensity);
+		// Green - standalone
+		return vec4(0.2, 1.0, 0.3, 3.0 * glowPulse);
 	} else if (index == 2) {
-		// Blue/Cyan
-		return vec4(0.3, 0.9, 1.0, intensity);
+		// Blue/Cyan - inside marble (cool ethereal)
+		return vec4(0.4, 0.7, 1.0, interiorIntensity);
+	} else if (index == 3) {
+		// Warm candle - inside wax
+		return vec4(1.0, 0.6, 0.2, interiorIntensity);
+	} else if (index == 4) {
+		// Teal/green - inside jade (mystical)
+		return vec4(0.2, 1.0, 0.6, interiorIntensity);
 	} else {
-		// Interior candle light (warm flickering)
-		float flicker = 0.9 + 0.1 * sin(iTime * 8.0) * sin(iTime * 12.0 + 1.0);
-		float candleIntensity = 10.0 * flicker;  // Brighter to shine through wax
-		return vec4(1.0, 0.7, 0.3, candleIntensity);  // Warm candle color
+		// Spotlight marker (dim)
+		return vec4(1.0, 0.95, 0.9, 1.0);
 	}
 }
 

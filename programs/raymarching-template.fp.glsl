@@ -17,7 +17,7 @@ layout (location = 0) out vec4 outColor;
 void main(void) {
 	// Output color
 	vec3 col = vec3(0.0);
-	vec3 bgCol = vec3(1.0);
+	vec3 bgCol = vec3(0.4);  // Darker background for material contrast
 	float dist = 0.0;
 
 	// Ray origin (camera position)

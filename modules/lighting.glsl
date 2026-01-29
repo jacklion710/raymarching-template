@@ -209,9 +209,9 @@ vec3 getLight(vec3 hitPos, vec3 rd, vec3 mate, vec3 normals){
 	float emissionStrength = clamp(length(gMaterial.emission) / 3.0, 0.0, 1.0);
 	shadow = mix(shadow, 1.0, emissionStrength);
 	
-	vec3 ambient = vec3(0.3) * mate * occ;
+	vec3 ambient = vec3(0.12) * mate * occ;  // Darker ambient for contrast
 	
-	float lightIntensity = 0.8;
+	float lightIntensity = 0.5;  // Reduced main light
 	vec3 col = (diffuse + specular) * lightIntensity * shadow + ambient;
 	
 	// Subsurface scattering: light penetrating and scattering inside the material
@@ -282,14 +282,14 @@ vec3 getLight(vec3 hitPos, vec3 rd, vec3 mate, vec3 normals){
 		col += emissiveDiffuse * emissiveAtt * surfaceFade * emissiveCol * mate * emissivePower;
 	}
 	
-	{   // Spotlight (flashlight effect)
-		// Position in front-right, pointing toward center of scene
-		vec3 spotPos = vec3(0.8, 0.5, -0.3);
-		vec3 spotTarget = vec3(0.0, 0.2, 0.2);
+	{   // Spotlight (backlighting SSS row)
+		// Position BEHIND the SSS spheres, pointing toward camera
+		vec3 spotPos = vec3(0.0, 0.5, 1.2);
+		vec3 spotTarget = vec3(0.0, 0.4, 0.0);
 		vec3 spotDir = normalize(spotTarget - spotPos);
-		vec3 spotCol = vec3(1.0, 0.95, 0.9) * 2.0;  // Warm white
-		float innerAngle = 0.2;   // ~11 degrees (tight beam)
-		float outerAngle = 0.4;   // ~23 degrees (soft edge)
+		vec3 spotCol = vec3(1.0, 0.98, 0.95) * 1.0;  // Reduced intensity
+		float innerAngle = 0.5;
+		float outerAngle = 0.9;
 		
 		col += getSpotLight(hitPos, spotPos, spotDir, normals, rd, spotCol, innerAngle, outerAngle);
 	}
