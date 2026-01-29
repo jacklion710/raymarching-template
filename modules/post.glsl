@@ -1,27 +1,28 @@
 // Calculate glow aura from emissive objects
-// Returns additive glow color based on ray proximity to emissive source
+// Uses centralized emissive definition from getEmissiveSource/getEmissiveProperties
 vec3 getEmissiveGlow(vec3 ro, vec3 rd, float sceneDepth) {
-	// Emissive sphere position (must match scene)
-	float glowY = 0.12 + sin(iTime * 1.2) * 0.03;
-	vec3 emissivePos = vec3(-0.15, glowY, -0.3);
-	float glowPulse = 0.8 + 0.2 * sin(iTime * 2.0);
-	vec3 emissiveCol = vec3(0.3, 0.9, 1.0) * 3.0 * glowPulse;
-	float emissiveRadius = 0.05;
+	// Get emissive source info (centralized)
+	vec4 source = getEmissiveSource();
+	vec4 props = getEmissiveProperties();
+	
+	vec3 emissivePos = source.xyz;
+	float emissiveRadius = source.w;
+	vec3 emissiveCol = props.xyz * props.w * 0.4;  // Color * intensity * glow factor
 	
 	// Find closest point on ray to emissive center
 	vec3 toEmissive = emissivePos - ro;
-	float t = max(dot(toEmissive, rd), 0.0);  // Project onto ray
-	t = min(t, sceneDepth);  // Don't glow behind solid objects
+	float t = max(dot(toEmissive, rd), 0.0);
+	t = min(t, sceneDepth);
 	
 	vec3 closestPoint = ro + rd * t;
 	float distToEmissive = length(closestPoint - emissivePos);
 	
 	// Soft glow falloff - extends well beyond the object
-	float glowRadius = emissiveRadius * 6.0;  // Glow extends 6x the object size
+	float glowRadius = emissiveRadius * 6.0;
 	float glow = 1.0 - smoothstep(0.0, glowRadius, distToEmissive);
-	glow = glow * glow;  // Quadratic falloff for softer edge
+	glow = glow * glow;
 	
-	return emissiveCol * glow * 0.4;
+	return emissiveCol * glow * 0.3;
 }
 
 // Post-processing pipeline: lens flare, fog, tone mapping, gamma correction

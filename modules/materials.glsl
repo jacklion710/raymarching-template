@@ -10,6 +10,23 @@ struct Material {
 // Global material set by getDist, read by lighting functions
 Material gMaterial = Material(vec3(0.5), 0.0, 0.5, vec3(0.0));
 
+// Emissive light source info (centralized definition)
+// Returns: position in xyz, radius in w
+vec4 getEmissiveSource() {
+	float glowY = 0.12 + sin(iTime * 1.2) * 0.03;
+	vec3 pos = vec3(-0.15, glowY, -0.3);
+	float radius = 0.05;
+	return vec4(pos, radius);
+}
+
+// Returns: emission color in xyz, intensity in w
+vec4 getEmissiveProperties() {
+	float glowPulse = 0.8 + 0.2 * sin(iTime * 2.0);
+	vec3 color = vec3(0.3, 0.9, 1.0);
+	float intensity = 8.0 * glowPulse;
+	return vec4(color, intensity);
+}
+
 // Create a basic dielectric (non-metal) material
 Material createMaterial(vec3 albedo) {
 	return Material(albedo, 0.0, 0.5, vec3(0.0));

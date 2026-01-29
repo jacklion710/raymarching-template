@@ -166,13 +166,14 @@ vec3 getLight(vec3 hitPos, vec3 rd, vec3 mate, vec3 normals){
 	// 	col += getPointLight(hitPos, pointPos, normals, rd, refRd, pointCol, mate);
 	// }
 	
-	{   // Emissive area light from glowing sphere
-		float glowY = 0.12 + sin(iTime * 1.2) * 0.03;
-		vec3 emissivePos = vec3(-0.15, glowY, -0.3);
-		float emissiveRadius = 0.05;
-		float glowPulse = 0.8 + 0.2 * sin(iTime * 2.0);
-		vec3 emissiveCol = vec3(0.3, 0.9, 1.0);
-		float emissivePower = 8.0 * glowPulse;
+	{   // Emissive area light (uses centralized emissive definition)
+		vec4 source = getEmissiveSource();
+		vec4 props = getEmissiveProperties();
+		
+		vec3 emissivePos = source.xyz;
+		float emissiveRadius = source.w;
+		vec3 emissiveCol = props.xyz;
+		float emissivePower = props.w;
 		
 		vec3 toEmissive = emissivePos - hitPos;
 		float distToEmissive = length(toEmissive);
@@ -181,7 +182,7 @@ vec3 getLight(vec3 hitPos, vec3 rd, vec3 mate, vec3 normals){
 		// Wrap lighting for soft diffuse spread
 		float emissiveDiffuse = max(dot(normals, emissiveDir) * 0.5 + 0.5, 0.0);
 		
-		// Smooth falloff starting from sphere surface (no hard cutoff)
+		// Smooth falloff starting from sphere surface
 		float effectiveDist = max(distToEmissive - emissiveRadius, 0.001);
 		float emissiveAtt = 1.0 / (1.0 + effectiveDist * effectiveDist * 5.0);
 		

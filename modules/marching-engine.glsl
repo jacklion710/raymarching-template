@@ -90,13 +90,13 @@ vec4 getDist(vec3 pos){ // Compose your scene here
 	);
 	scene = sceneSmin(scene, cube, 0.05);
 	
-	// Glowing cyan sphere (floating, pulsing)
-	float glowY = 0.12 + sin(iTime * 1.2) * 0.03;
-	vec3 glowPos = pos - vec3(-0.15, glowY, -0.3);
-	float glowPulse = 0.8 + 0.2 * sin(iTime * 2.0);
+	// Glowing sphere (uses centralized emissive definition)
+	vec4 emissiveSource = getEmissiveSource();
+	vec4 emissiveProps = getEmissiveProperties();
+	vec3 glowPos = pos - emissiveSource.xyz;
 	SceneResult glowSphere = sceneResult(
-		fSphere(glowPos, 0.05),
-		matGlow(vec3(0.3, 0.9, 1.0), 8.0 * glowPulse)  // Bright saturated cyan glow
+		fSphere(glowPos, emissiveSource.w),
+		matGlow(emissiveProps.xyz, emissiveProps.w)
 	);
 	scene = sceneMin(scene, glowSphere);
 	
@@ -107,15 +107,16 @@ vec4 getDist(vec3 pos){ // Compose your scene here
 	return vec4(scene.mat.albedo, scene.dist);
 }
 
-// O(1): Raymarching loop.
+// O(n): Raymarching loop.
 // ro: ray origin
 // rd: ray direction
-vec4 map(vec3 ro, vec3 rd){ // Raymarching loop
+vec4 map(vec3 ro, vec3 rd){
 	float hitMap;
 	float currDist = nearClip;
 	float dist = 0; 
 	vec4 scene;
 	vec3 pos;
+	
 	for(int i = 0; i < MAX_STEPS; i++) {
 		pos = ro + rd * currDist;
 		scene = getDist(pos);
