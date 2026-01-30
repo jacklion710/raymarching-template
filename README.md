@@ -8,10 +8,10 @@ NOTE: Later it may be nice to add controls to enable/disable different lighting 
 
 TODO:
 - Implement new materials
-    - Subsurface Scattering - Light penetrating translucent surfaces (skin, wax, leaves)
     - Transparency/Refraction - Glass, water, crystals (requires ray bending)
     - Toon/Cel Shading - Stylized stepped lighting for cartoon look
-- Iridescent material enhancements
+- Material enhancements
+- Ensure union ops still blend materials accurately
 - Anti aliasing
 - Palette function and lighting for hetti styles
 - Glean/glimmer for metallic materials
