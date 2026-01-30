@@ -26,8 +26,10 @@ float getAmbientOcclusion(vec3 hitPos, vec3 normal){
 	for(int i = 0; i < 5; i++){
 		float h = 0.01 + 0.04 * float(i) / 4.0;
 		float d = getDist(hitPos + normal * h).w;
-		// Emissive objects don't contribute to occlusion (they emit light)
-		if (length(gMaterial.emission) < 1.0) {
+		// Emissive and transmissive objects don't contribute to occlusion
+		float hitEmission = length(gMaterial.emission);
+		float hitTransmission = gMaterial.transmission;
+		if (hitEmission < 0.5 && hitTransmission < 0.5) {
 			occ += (h - d) * sca;
 		}
 		sca *= 0.5;
@@ -38,24 +40,34 @@ float getAmbientOcclusion(vec3 hitPos, vec3 normal){
 #endif
 }
 
-// O(n): Shadow calculation with soft penumbra.
+// O(n): Simple shadow calculation (no caustics).
 // hitPos: hit position
 // rd: ray direction toward light
 // k: shadow softness (higher = softer penumbra)
-float getShadow(vec3 hitPos, vec3 rd, float k){
+float getSimpleShadow(vec3 hitPos, vec3 rd, float k){
 	float sha = 1.0;
 	for (float h = 0.01; h < 12.0; ){
 		float d = getDist(hitPos + rd * h).w;
+		float hitEmission = length(gMaterial.emission);
+		
 		if (d < MIN_DIST){
-			// Emissive objects don't block light - step past them
-			if (length(gMaterial.emission) > 1.0) {
+			if (hitEmission > 0.5) {
 				h += 0.15;
+				continue;
+			}
+			if (gMaterial.transmission > 0.5) {
+				sha *= 0.7;
+				h += 0.1;
+				continue;
+			}
+			if (gMaterial.subsurface > 0.5) {
+				sha *= 0.5;
+				h += 0.08;
 				continue;
 			}
 			return 0.0;
 		}
-		// Early emissive check during approach
-		if (d < 0.1 && length(gMaterial.emission) > 1.0) {
+		if (d < 0.1 && hitEmission > 0.5) {
 			h += 0.15;
 			continue;
 		}
@@ -63,6 +75,127 @@ float getShadow(vec3 hitPos, vec3 rd, float k){
 		h += d;
 	}
 	return sha;
+}
+
+// O(n): Colored shadow calculation with caustics and SSS bleeding.
+// hitPos: hit position
+// rd: ray direction toward light
+// k: shadow softness (higher = softer penumbra)
+// Returns: RGB shadow color (white = no shadow, tinted = colored caustic)
+#if RM_ENABLE_CAUSTIC_SHADOWS
+vec3 getColoredShadow(vec3 hitPos, vec3 rd, float k){
+	vec3 shadowColor = vec3(1.0);
+	float sha = 1.0;
+	float causticBrightness = 1.0;
+	
+	for (float h = 0.01; h < 12.0; ){
+		vec3 samplePos = hitPos + rd * h;
+		float d = getDist(samplePos).w;
+		float hitEmission = length(gMaterial.emission);
+		float hitTransmission = gMaterial.transmission;
+		float hitSubsurface = gMaterial.subsurface;
+		vec3 hitAlbedo = gMaterial.albedo;
+		vec3 hitSubsurfaceCol = gMaterial.subsurfaceCol;
+		float hitIridescence = gMaterial.iridescence;
+		float hitIOR = gMaterial.ior;
+		
+		if (d < MIN_DIST){
+			// Emissive objects don't block light - step past them
+			if (hitEmission > 0.5) {
+				h += 0.15;
+				continue;
+			}
+			
+			// Transmissive objects cast colored caustic shadows with light focusing
+			if (hitTransmission > 0.3) {
+				// Get surface normal for refraction/focusing calculation
+				vec3 hitNormal = getNorm(samplePos);
+				
+				// Light focusing from curved surfaces (caustic brightening)
+				float curvature = abs(dot(hitNormal, rd));
+				float focusing = 1.0 + (1.0 - curvature) * 0.8 * hitTransmission;
+				causticBrightness *= focusing;
+				
+				// Strong absorption-based coloring (Beer-Lambert)
+				vec3 absorptionCoeff = vec3(1.0) - hitAlbedo;
+				float thickness = 0.25 * (hitIOR - 1.0);
+				vec3 causticTint = exp(-absorptionCoeff * thickness * 5.0);
+				shadowColor *= causticTint;
+				
+				// Stronger chromatic aberration
+				float chromatic = (hitIOR - 1.33) * 0.2;
+				shadowColor.r *= 1.0 + chromatic;
+				shadowColor.b *= 1.0 - chromatic;
+				
+				sha *= mix(1.0, 0.85, hitTransmission);
+				h += 0.06;
+				continue;
+			}
+			
+			// SSS objects cast colored, soft-edged shadows with depth-based bleeding
+			if (hitSubsurface > 0.3) {
+				// Sample through the SSS object to estimate thickness
+				float sssThickness = 0.0;
+				vec3 sssPos = samplePos;
+				for (int i = 0; i < 12; i++) {
+					float sssD = getDist(sssPos).w;
+					if (sssD > MIN_DIST * 2.0) break;
+					sssThickness += 0.02;
+					sssPos += rd * 0.02;
+				}
+				
+				// Strong color bleeding - the subsurface color dominates
+				vec3 absorptionCoeff = vec3(1.0) - hitSubsurfaceCol;
+				vec3 sssTint = exp(-absorptionCoeff * sssThickness * 12.0);
+				shadowColor *= hitSubsurfaceCol * sssTint * 1.2;
+				
+				// Very soft shadow - SSS materials let a lot of light through
+				sha *= mix(0.5, 0.85, clamp(sssThickness * 8.0, 0.0, 1.0));
+				h += sssThickness + 0.02;
+				continue;
+			}
+			
+			// Iridescent objects cast rainbow caustic shadows
+			if (hitIridescence > 0.3) {
+				// Position and angle dependent rainbow
+				float phase = dot(samplePos, vec3(1.0, 0.5, 0.3)) * 12.0 + h * 3.0;
+				vec3 iriTint = 0.5 + 0.5 * cos(6.28318 * (phase + vec3(0.0, 0.33, 0.67)));
+				shadowColor *= mix(vec3(0.8), iriTint, hitIridescence * 0.7);
+				sha *= 0.6;
+				h += 0.08;
+				continue;
+			}
+			
+			// Opaque object - full shadow
+			return vec3(0.0);
+		}
+		
+		// Early emissive check during approach
+		if (d < 0.1 && hitEmission > 0.5) {
+			h += 0.15;
+			continue;
+		}
+		
+		sha = min(sha, k * d / h);
+		h += d;
+	}
+	
+	// Apply shadow intensity and caustic brightness to color
+	return shadowColor * sha * min(causticBrightness, 1.5);
+}
+#endif
+
+// O(n): Shadow calculation with soft penumbra (intensity only).
+// hitPos: hit position
+// rd: ray direction toward light
+// k: shadow softness (higher = softer penumbra)
+float getShadow(vec3 hitPos, vec3 rd, float k){
+#if RM_ENABLE_CAUSTIC_SHADOWS
+	vec3 coloredShadow = getColoredShadow(hitPos, rd, k);
+	return (coloredShadow.r + coloredShadow.g + coloredShadow.b) / 3.0;
+#else
+	return getSimpleShadow(hitPos, rd, k);
+#endif
 }
 
 // Optional point light toggle (no external parameters for now).
@@ -89,11 +222,15 @@ vec3 getPointLight(vec3 hitPos, vec3 lightPos, vec3 normals, vec3 rd, vec3 refRd
 	
 	// Softer shadows for rough surfaces (higher k = softer)
 	float shadowSoftness = mix(17.0, 4.0, roughness);
-	float sha = getShadow(hitPos, -lightDir, shadowSoftness);
+#if RM_ENABLE_CAUSTIC_SHADOWS
+	vec3 shadowColor = getColoredShadow(hitPos, -lightDir, shadowSoftness);
+#else
+	vec3 shadowColor = vec3(getSimpleShadow(hitPos, -lightDir, shadowSoftness));
+#endif
 	float dist = length(hitPos - lightPos);
 	float att = 1. / (dist * dist);
 
-	return (dif * mate + spe * specColor) * sha * att * lightCol;
+	return (dif * mate + spe * specColor) * shadowColor * att * lightCol;
 }
 
 // O(1): Spotlight calculation (cone-shaped directional light)
@@ -138,10 +275,14 @@ vec3 getSpotLight(vec3 hitPos, vec3 spotPos, vec3 spotDir, vec3 normals, vec3 rd
 	// Distance attenuation
 	float distAtt = 1.0 / (1.0 + dist * dist * 2.0);
 	
-	// Shadow (optional - can be expensive)
-	float shadow = getShadow(hitPos, lightDir, 8.0);
+	// Shadow calculation
+#if RM_ENABLE_CAUSTIC_SHADOWS
+	vec3 shadowColor = getColoredShadow(hitPos, lightDir, 8.0);
+#else
+	vec3 shadowColor = vec3(getSimpleShadow(hitPos, lightDir, 8.0));
+#endif
 	
-	return (diffuse + specular) * spotAtt * distAtt * shadow * spotCol;
+	return (diffuse + specular) * spotAtt * distAtt * shadowColor * spotCol;
 }
 
 // O(1): Sky light calculation.
@@ -221,19 +362,36 @@ vec3 getLight(vec3 hitPos, vec3 rd, vec3 mate, vec3 normals){
 	}
 #endif
 	
-	// Environment/ambient - softer shadows for rough surfaces
-	float occ = getAmbientOcclusion(hitPos, normals);
-	float shadowSoftness = mix(16.0, 4.0, roughness);
-	float shadow = getShadow(hitPos, -lightDir, shadowSoftness);
-	
-	// Emissive objects cast weaker shadows (their own light fills the shadow area)
+	// Emissive strength calculation (used for shadow and AO adjustments)
 	float emissionStrength = clamp(length(gMaterial.emission) / 3.0, 0.0, 1.0);
-	shadow = mix(shadow, 1.0, emissionStrength);
+	
+	// Toon materials: hard shadows and no AO for clean cartoon look
+	float occ = 1.0;
+	float shadowSoftness = mix(16.0, 4.0, roughness);
+#if RM_ENABLE_TOON
+	if (toonSteps > 0.0) {
+		shadowSoftness = 32.0;  // Hard shadow edges
+	} else {
+		occ = getAmbientOcclusion(hitPos, normals);
+	}
+#else
+	occ = getAmbientOcclusion(hitPos, normals);
+#endif
+	
+	// Shadow calculation (colored caustics when enabled)
+#if RM_ENABLE_CAUSTIC_SHADOWS
+	vec3 shadowColor = getColoredShadow(hitPos, -lightDir, shadowSoftness);
+#else
+	vec3 shadowColor = vec3(getSimpleShadow(hitPos, -lightDir, shadowSoftness));
+#endif
+	
+	// Emissive objects don't receive shadows (they glow uniformly)
+	shadowColor = mix(shadowColor, vec3(1.0), emissionStrength);
 	
 	vec3 ambient = vec3(0.1) * mate * occ;  // Ambient for visibility
 	
 	float lightIntensity = 0.28;  // Main light intensity
-	vec3 col = (diffuse + specular) * lightIntensity * shadow + ambient;
+	vec3 col = (diffuse + specular) * lightIntensity * shadowColor + ambient;
 	
 	// Subsurface scattering: light penetrating and scattering inside the material
 #if RM_ENABLE_SSS
@@ -289,31 +447,34 @@ vec3 getLight(vec3 hitPos, vec3 rd, vec3 mate, vec3 normals){
 	// }
 	
 	// Emissive area lights (loops through all centralized emissive definitions)
+	// Skip emissive lighting for surfaces that are themselves emissive
 #if RM_ENABLE_EMISSIVE
-	for (int i = 0; i < NUM_EMISSIVES; i++) {
-		vec4 source = getEmissiveSource(i);
-		vec4 props = getEmissiveProperties(i);
-		
-		vec3 emissivePos = source.xyz;
-		float emissiveRadius = source.w;
-		vec3 emissiveCol = props.xyz;
-		float emissivePower = props.w;
-		
-		vec3 toEmissive = emissivePos - hitPos;
-		float distToEmissive = length(toEmissive);
-		vec3 emissiveDir = toEmissive / max(distToEmissive, 0.001);
-		
-		// Wrap lighting for soft diffuse spread
-		float emissiveDiffuse = max(dot(normals, emissiveDir) * 0.5 + 0.5, 0.0);
-		
-		// Smooth falloff starting from sphere surface
-		float effectiveDist = max(distToEmissive - emissiveRadius, 0.001);
-		float emissiveAtt = 1.0 / (1.0 + effectiveDist * effectiveDist * 5.0);
-		
-		// Smoothly fade out when very close to emissive (on its surface)
-		float surfaceFade = smoothstep(emissiveRadius, emissiveRadius * 3.0, distToEmissive);
-		
-		col += emissiveDiffuse * emissiveAtt * surfaceFade * emissiveCol * mate * emissivePower;
+	if (emissionStrength < 0.5) {
+		for (int i = 0; i < NUM_EMISSIVES; i++) {
+			vec4 source = getEmissiveSource(i);
+			vec4 props = getEmissiveProperties(i);
+			
+			vec3 emissivePos = source.xyz;
+			float emissiveRadius = source.w;
+			vec3 emissiveCol = props.xyz;
+			float emissivePower = props.w;
+			
+			vec3 toEmissive = emissivePos - hitPos;
+			float distToEmissive = length(toEmissive);
+			vec3 emissiveDir = toEmissive / max(distToEmissive, 0.001);
+			
+			// Wrap lighting for soft diffuse spread
+			float emissiveDiffuse = max(dot(normals, emissiveDir) * 0.5 + 0.5, 0.0);
+			
+			// Smooth falloff starting from sphere surface
+			float effectiveDist = max(distToEmissive - emissiveRadius, 0.001);
+			float emissiveAtt = 1.0 / (1.0 + effectiveDist * effectiveDist * 5.0);
+			
+			// Smoothly fade out when very close to emissive (on its surface)
+			float surfaceFade = smoothstep(emissiveRadius, emissiveRadius * 3.0, distToEmissive);
+			
+			col += emissiveDiffuse * emissiveAtt * surfaceFade * emissiveCol * mate * emissivePower;
+		}
 	}
 #endif
 	
@@ -323,11 +484,45 @@ vec3 getLight(vec3 hitPos, vec3 rd, vec3 mate, vec3 normals){
 		vec3 spotPos = vec3(0.0, 0.5, 1.2);
 		vec3 spotTarget = vec3(0.0, 0.4, 0.0);
 		vec3 spotDir = normalize(spotTarget - spotPos);
-		vec3 spotCol = vec3(1.0, 0.98, 0.95) * 0.4;  // Spotlight intensity
+		vec3 spotCol = vec3(1.0, 0.98, 0.95) * 0.4;
 		float innerAngle = 0.5;
 		float outerAngle = 0.9;
 		
 		col += getSpotLight(hitPos, spotPos, spotDir, normals, rd, spotCol, innerAngle, outerAngle);
+	}
+	
+	{   // Spotlight for transparent materials row
+		// Position above and in front, angled down at the glass spheres
+		vec3 transSpotPos = vec3(0.0, 0.9, 0.4);
+		vec3 transSpotTarget = vec3(0.0, 0.56, 0.8);
+		vec3 transSpotDir = normalize(transSpotTarget - transSpotPos);
+		vec3 transSpotCol = vec3(1.0, 1.0, 1.0) * 0.5;
+		float transInner = 0.4;
+		float transOuter = 0.7;
+		
+		col += getSpotLight(hitPos, transSpotPos, transSpotDir, normals, rd, transSpotCol, transInner, transOuter);
+	}
+	
+	// Point lights positioned to cast colored shadows from special materials onto the floor
+	{
+		// Light behind glass row - casts colored caustic shadows forward onto floor
+		vec3 glassLight = vec3(-0.2, 0.4, 1.1);
+		vec3 glassLightCol = vec3(1.0, 0.98, 0.95) * 0.6;
+		col += getPointLight(hitPos, glassLight, normals, rd, reflect(rd, normals), glassLightCol, mate);
+	}
+	
+	{
+		// Light behind SSS row - casts colored bleeding shadows onto floor
+		vec3 sssLight = vec3(0.2, 0.35, 0.95);
+		vec3 sssLightCol = vec3(1.0, 0.95, 0.9) * 0.5;
+		col += getPointLight(hitPos, sssLight, normals, rd, reflect(rd, normals), sssLightCol, mate);
+	}
+	
+	{
+		// Side light for iridescent row - casts rainbow shadows
+		vec3 iriLight = vec3(-0.6, 0.4, 0.6);
+		vec3 iriLightCol = vec3(1.0, 1.0, 1.0) * 0.4;
+		col += getPointLight(hitPos, iriLight, normals, rd, reflect(rd, normals), iriLightCol, mate);
 	}
 #endif
 #endif

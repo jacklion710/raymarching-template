@@ -18,8 +18,8 @@
                     "numinlets": 2,
                     "numoutlets": 1,
                     "outlettype": [ "" ],
-                    "patching_rect": [ 44.0, 380.0, 103.0, 22.0 ],
-                    "text": "exportimage jpeg"
+                    "patching_rect": [ 47.5, 373.0, 118.0, 22.0 ],
+                    "text": "exportimage rm jpeg"
                 }
             },
             {

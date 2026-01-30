@@ -170,15 +170,31 @@ vec3 shadeHit(vec3 hitPos, vec3 rd, vec3 material, vec3 bgCol) {
 	// Get material properties - save these before any calls that might overwrite gMaterial
 	float metallic = gMaterial.metallic;
 	float roughness = gMaterial.roughness;
-	vec3 emission = gMaterial.emission;  // Save emission before getLight overwrites gMaterial
+	vec3 emission = gMaterial.emission;
 	float transmission = gMaterial.transmission;
 	float ior = gMaterial.ior;
+	float iridescence = gMaterial.iridescence;
+	
+	// Apply iridescence to material color for consistent appearance in reflections
+#if RM_ENABLE_IRIDESCENCE
+	if (iridescence > 0.0) {
+		float NdotV = max(dot(normals, -rd), 0.0);
+		vec3 iriColor = getIridescentColor(NdotV, material);
+		material = mix(material, iriColor, iridescence);
+	}
+#endif
 	
 	// Fresnel with metallic influence (Schlick approximation)
 	// Metals have high base reflectivity, dielectrics have low (~0.04)
+	// Iridescent materials have enhanced Fresnel (thin-film interference)
 	float F0 = mix(0.04, 0.9, metallic);
+	F0 = mix(F0, 0.15, iridescence);  // Iridescence increases base reflectivity
 	float cosTheta = max(dot(normals, -rd), 0.0);
 	float fresnel = F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
+	
+	// Iridescent materials have stronger edge reflections
+	fresnel = mix(fresnel, fresnel * 1.3, iridescence);
+	fresnel = clamp(fresnel, 0.0, 1.0);
 	
 	// Roughness heavily reduces reflection (rough surfaces scatter light)
 	float roughnessDampen = (1.0 - roughness) * (1.0 - roughness);  // Quadratic falloff
@@ -201,8 +217,11 @@ vec3 shadeHit(vec3 hitPos, vec3 rd, vec3 material, vec3 bgCol) {
 		vec3 R = reflect(rd, normals);
 		vec3 reflRo = hitPos + normals * (MIN_DIST * 4.0);
 		vec3 reflColor = getFirstReflection(reflRo, R, bgCol);
-		vec3 reflTint = mix(vec3(1.0), material, metallic * 0.5);
+		
+		// Reflection tint: metals tint with albedo, iridescent materials tint with shifted color
+		vec3 reflTint = mix(vec3(1.0), material, max(metallic * 0.5, iridescence * 0.6));
 		reflectionCol = reflColor * reflTint;
+		
 		float reflStrength = reflectionStrength;
 		if (isTransmissive) {
 			reflStrength *= 0.35;
