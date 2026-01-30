@@ -6,6 +6,25 @@ vec4 getDist(vec3 pos);
 // Returns vec4(albedoRGB, distanceAlongRay).
 vec4 map(vec3 ro, vec3 rd);
 
+// Forward declarations for scene-specific lighting functions
+// Each scene file defines its own lighting setup
+vec3 showcaseSceneLights(vec3 hitPos, vec3 normals, vec3 rd, vec3 mate);
+vec3 causticSceneLights(vec3 hitPos, vec3 normals, vec3 rd, vec3 mate);
+
+// Scene lights dispatcher
+// Scene selection controlled by RM_ACTIVE_SCENE in globals.glsl
+// hitPos: surface hit position
+// normals: surface normal
+// rd: view ray direction
+// mate: surface albedo
+vec3 getSceneLights(vec3 hitPos, vec3 normals, vec3 rd, vec3 mate) {
+#if RM_ACTIVE_SCENE == SCENE_SHOWCASE
+	return showcaseSceneLights(hitPos, normals, rd, mate);
+#elif RM_ACTIVE_SCENE == SCENE_CAUSTICS
+	return causticSceneLights(hitPos, normals, rd, mate);
+#endif
+}
+
 // O(1): Normal calculation for lighting.
 // hitPos: hit position
 vec3 getNorm(vec3 hitPos){ // Normal calculation for lighting
@@ -478,53 +497,9 @@ vec3 getLight(vec3 hitPos, vec3 rd, vec3 mate, vec3 normals){
 	}
 #endif
 	
-#if RM_ENABLE_SPOTLIGHT
-	{   // Spotlight (backlighting SSS row)
-		// Position BEHIND the SSS spheres, pointing toward camera
-		vec3 spotPos = vec3(0.0, 0.5, 1.2);
-		vec3 spotTarget = vec3(0.0, 0.4, 0.0);
-		vec3 spotDir = normalize(spotTarget - spotPos);
-		vec3 spotCol = vec3(1.0, 0.98, 0.95) * 0.4;
-		float innerAngle = 0.5;
-		float outerAngle = 0.9;
-		
-		col += getSpotLight(hitPos, spotPos, spotDir, normals, rd, spotCol, innerAngle, outerAngle);
-	}
-	
-	{   // Spotlight for transparent materials row
-		// Position above and in front, angled down at the glass spheres
-		vec3 transSpotPos = vec3(0.0, 0.9, 0.4);
-		vec3 transSpotTarget = vec3(0.0, 0.56, 0.8);
-		vec3 transSpotDir = normalize(transSpotTarget - transSpotPos);
-		vec3 transSpotCol = vec3(1.0, 1.0, 1.0) * 0.5;
-		float transInner = 0.4;
-		float transOuter = 0.7;
-		
-		col += getSpotLight(hitPos, transSpotPos, transSpotDir, normals, rd, transSpotCol, transInner, transOuter);
-	}
-	
-	// Point lights positioned to cast colored shadows from special materials onto the floor
-	{
-		// Light behind glass row - casts colored caustic shadows forward onto floor
-		vec3 glassLight = vec3(-0.2, 0.4, 1.1);
-		vec3 glassLightCol = vec3(1.0, 0.98, 0.95) * 0.6;
-		col += getPointLight(hitPos, glassLight, normals, rd, reflect(rd, normals), glassLightCol, mate);
-	}
-	
-	{
-		// Light behind SSS row - casts colored bleeding shadows onto floor
-		vec3 sssLight = vec3(0.2, 0.35, 0.95);
-		vec3 sssLightCol = vec3(1.0, 0.95, 0.9) * 0.5;
-		col += getPointLight(hitPos, sssLight, normals, rd, reflect(rd, normals), sssLightCol, mate);
-	}
-	
-	{
-		// Side light for iridescent row - casts rainbow shadows
-		vec3 iriLight = vec3(-0.6, 0.4, 0.6);
-		vec3 iriLightCol = vec3(1.0, 1.0, 1.0) * 0.4;
-		col += getPointLight(hitPos, iriLight, normals, rd, reflect(rd, normals), iriLightCol, mate);
-	}
-#endif
+	// Scene-specific lights (spotlights, point lights)
+	// Each scene defines its own lighting setup in getSceneLights()
+	col += getSceneLights(hitPos, normals, rd, mate);
 #endif
 
 	return col;

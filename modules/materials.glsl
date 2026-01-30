@@ -33,14 +33,22 @@ vec3 getIridescentColor(float viewAngle, vec3 baseColor) {
 	return mix(baseColor, rainbow, strength * 0.8);
 }
 
-// Number of emissive light sources in the scene
+// Number of emissive light sources per scene
+// Each scene defines its own emissive configuration
+#if RM_ACTIVE_SCENE == SCENE_SHOWCASE
 #define NUM_EMISSIVES 6
+#elif RM_ACTIVE_SCENE == SCENE_CAUSTICS
+#define NUM_EMISSIVES 0  // Caustics scene has no emissive objects
+#else
+#define NUM_EMISSIVES 0
+#endif
 
-// Emissive light source info (centralized definition)
+// Emissive light source info (scene-specific definitions)
 // index: 0 to NUM_EMISSIVES-1
 // Returns: position in xyz, radius in w
 vec4 getEmissiveSource(int index) {
-	// SSS sphere positions (must match marching-engine.glsl)
+#if RM_ACTIVE_SCENE == SCENE_SHOWCASE
+	// Showcase scene: emissives inside SSS spheres
 	float sssSpacing = 0.3;
 #if RM_ENABLE_SSS
 	float sssY = 0.42 + sin(iTime * 0.6) * 0.01;
@@ -70,11 +78,17 @@ vec4 getEmissiveSource(int index) {
 		// Spotlight position marker (dim reference)
 		return vec4(0.8, 0.5, -0.3, 0.02);
 	}
+#else
+	// Default: no emissives
+	return vec4(0.0, -100.0, 0.0, 0.0);
+#endif
 }
 
 // Returns: emission color in xyz, intensity in w
 // index: 0 to NUM_EMISSIVES-1
 vec4 getEmissiveProperties(int index) {
+#if RM_ACTIVE_SCENE == SCENE_SHOWCASE
+	// Showcase scene: glowing emissives inside SSS materials
 	float glowPulse = 0.8 + 0.2 * sin(iTime * 2.0 + float(index) * 2.0);
 	float flicker = 0.9 + 0.1 * sin(iTime * 8.0) * sin(iTime * 12.0 + 1.0);
 	float interiorIntensity = 2.0 * flicker;  // Subtle glow for SSS materials
@@ -98,6 +112,10 @@ vec4 getEmissiveProperties(int index) {
 		// Spotlight marker (dim)
 		return vec4(1.0, 0.95, 0.9, 0.25);
 	}
+#else
+	// Default: no emission
+	return vec4(0.0, 0.0, 0.0, 0.0);
+#endif
 }
 
 // Create a basic dielectric (non-metal) material

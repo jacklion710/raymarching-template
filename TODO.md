@@ -6,12 +6,13 @@
 - [ ] Anti-aliasing implementation
 - [ ] Denoising pass
 - [ ] Glean/glimmer effect for metallic materials
-- [ ] Environment map background
 - [ ] Interesting procedural background
+- [ ] Environment map background
+- [ ] Flag for global illumination
 
 ### SSS Improvements
 - [ ] Review SSS light absorption vs emission balance
-- [ ] Stagger control for emissive flickering (currently all in sync)
+- [ ] Stagger control for emissive flickering (currently all are in sync)
 
 ### Iridescence
 - [ ] Explore additional iridescence enhancements

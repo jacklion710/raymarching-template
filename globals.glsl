@@ -4,6 +4,15 @@
 #ifndef RM_GLOBALS_GLSL
 #define RM_GLOBALS_GLSL
 
+// Scene selection - change this to switch between scenes
+// Available scenes: SCENE_SHOWCASE, SCENE_CAUSTICS
+#define SCENE_SHOWCASE 0
+#define SCENE_CAUSTICS 1
+
+#ifndef RM_ACTIVE_SCENE
+#define RM_ACTIVE_SCENE SCENE_CAUSTICS
+#endif
+
 // Raymarch settings
 #ifndef MAX_STEPS
 #define MAX_STEPS 500
