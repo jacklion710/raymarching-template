@@ -240,29 +240,39 @@ vec3 getLight(vec3 hitPos, vec3 rd, vec3 mate, vec3 normals){
 	if (subsurface > 0.0) {
 		// Estimate thickness by sampling SDF behind the surface
 		float thickness = 0.0;
-		vec3 sampleDir = -normals;  // Sample into the object
+		vec3 sampleDir = -normals;
 		for (int i = 1; i <= 4; i++) {
-			float sampleDist = 0.03 * float(i);
+			float sampleDist = 0.02 * float(i);
 			float d = getDist(hitPos + sampleDir * sampleDist).w;
 			thickness += max(0.0, -d);
 		}
-		thickness = clamp(thickness * 3.0, 0.0, 1.0);
+		thickness = clamp(thickness * 4.0, 0.0, 1.0);
 		
-		// Light transmission through thin areas (back-lighting effect)
+		// Absorption: thicker areas absorb more light (Beer-Lambert)
+		// Absorb wavelengths that are NOT the subsurface color
+		vec3 absorptionCoeff = vec3(1.0) - subsurfaceCol;
+		vec3 absorption = exp(-absorptionCoeff * thickness * 4.0);
+		
+		// Reduce and tint surface lighting - light penetrates instead of bouncing
+		float surfaceReduction = mix(1.0, 0.3, subsurface);
+		col *= surfaceReduction * absorption;
+		
+		// Back-lighting: light shining through from behind
 		float NdotL_back = max(dot(lightDir, normals), 0.0);
-		float transmission = (1.0 - thickness) * NdotL_back;
+		float backlit = NdotL_back * pow(1.0 - thickness, 2.0);
 		
 		// Wrap lighting for soft light bleeding around edges
-		float wrap = max(0.0, (dot(-lightDir, normals) + 0.6) / 1.6);
+		float wrap = max(0.0, (dot(-lightDir, normals) + 0.5) / 1.5);
 		
-		// View-dependent scattering (stronger at grazing angles)
+		// View-dependent rim scattering
 		float NdotV = max(dot(normals, -rd), 0.0);
-		float edgeScatter = pow(1.0 - NdotV, 2.0) * 0.5;
+		float rimScatter = pow(1.0 - NdotV, 3.0) * 0.3;
 		
-		float scatter = max(wrap, transmission) + edgeScatter;
+		// Combine scattering terms - thin areas glow more
+		float scatter = (wrap * 0.5 + backlit * 1.5 + rimScatter) * (1.0 - thickness * 0.7);
 		
-		// Add subsurface contribution with boosted intensity
-		vec3 sssColor = subsurfaceCol * scatter * subsurface * lightIntensity * 1.5;
+		// Final SSS color - the subsurface color shows through
+		vec3 sssColor = subsurfaceCol * scatter * subsurface * lightIntensity;
 		col += sssColor;
 	}
 #endif

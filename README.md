@@ -15,7 +15,8 @@ TODO:
     - Explore iridescence enhancements if any
 - Anti aliasing
 - Denoising
-- Palette function and lighting for hetti styles
 - Glean/glimmer for metallic materials
 - stagger control for flickering so they're not all in sync
 - SSS light absotption fix
+- Cool hg modifiers
+- Palette function and lighting for hetti styles
