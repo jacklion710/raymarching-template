@@ -39,7 +39,32 @@ vec4 getDist(vec3 pos){ // Compose your scene here
 	// Gentle floating animation
 	float bounce = sin(iTime * 1.5) * 0.02;
 	
-	// 1. Blue plastic (leftmost)
+	// === SMOOTH BLEND DEMO (LEFT) ===
+	// Two spheres with different materials blended together
+	// Demonstrates color + roughness interpolation
+	float blendK = 0.08;  // Blend smoothness
+	
+	// Animation: oscillate position and size in opposite directions
+	float blendAnim = sin(iTime * 1.2);
+	float blendAnimOffset = sin(iTime * 1.2 + 3.14159);  // Opposite phase
+	
+	// Left blend: Blue plastic + Orange rubber
+	vec3 blendL1 = pos - vec3(-spacing * 3.0 + blendAnim * 0.04, y + 0.15 + blendAnim * 0.02, 0.2);
+	vec3 blendL2 = pos - vec3(-spacing * 2.7 + blendAnimOffset * 0.04, y + 0.18 + blendAnimOffset * 0.02, 0.25);
+	float blendRadL1 = radius * (0.85 + blendAnim * 0.15);
+	float blendRadL2 = radius * (0.85 + blendAnimOffset * 0.15);
+	SceneResult blendLeft1 = sceneResult(
+		fSphere(blendL1, blendRadL1),
+		matPlastic(vec3(0.1, 0.4, 0.95))  // Blue
+	);
+	SceneResult blendLeft2 = sceneResult(
+		fSphere(blendL2, blendRadL2),
+		matRubber(vec3(0.95, 0.5, 0.1))   // Orange
+	);
+	SceneResult blendedLeft = sceneSmin(blendLeft1, blendLeft2, blendK);
+	scene = sceneMin(scene, blendedLeft);
+	
+	// 1. Blue plastic (leftmost of main row)
 	vec3 p1 = pos - vec3(-spacing * 2.0, y + bounce, 0.0);
 	SceneResult s1 = sceneResult(
 		fSphere(p1, radius),
@@ -71,13 +96,30 @@ vec4 getDist(vec3 pos){ // Compose your scene here
 	);
 	scene = sceneMin(scene, s4);
 	
-	// 5. Green rubber (rightmost)
+	// 5. Green rubber (rightmost of main row)
 	vec3 p5 = pos - vec3(spacing * 2.0, y + bounce * 0.2, 0.0);
 	SceneResult s5 = sceneResult(
 		fSphere(p5, radius),
 		matRubber(vec3(0.2, 0.7, 0.3))
 	);
 	scene = sceneMin(scene, s5);
+	
+	// === SMOOTH BLEND DEMO (RIGHT) ===
+	// Metal + Matte blend - shows metallic property interpolation
+	vec3 blendR1 = pos - vec3(spacing * 2.7 + blendAnimOffset * 0.04, y + 0.16 + blendAnimOffset * 0.02, 0.25);
+	vec3 blendR2 = pos - vec3(spacing * 3.0 + blendAnim * 0.04, y + 0.13 + blendAnim * 0.02, 0.2);
+	float blendRadR1 = radius * (0.85 + blendAnimOffset * 0.15);
+	float blendRadR2 = radius * (0.85 + blendAnim * 0.15);
+	SceneResult blendRight1 = sceneResult(
+		fSphere(blendR1, blendRadR1),
+		matGold()  // Shiny metallic
+	);
+	SceneResult blendRight2 = sceneResult(
+		fSphere(blendR2, blendRadR2),
+		matRubber(vec3(0.2, 0.8, 0.6))  // Matte teal
+	);
+	SceneResult blendedRight = sceneSmin(blendRight1, blendRight2, blendK);
+	scene = sceneMin(scene, blendedRight);
 	
 	// Gold rotating cube (polished gold finish)
 	float cubeY = 0.08 + sin(iTime * 0.8) * 0.04;
