@@ -67,7 +67,98 @@ vec3 getDoFOffset(int sampleIndex, int sampleCount, mat3 camMat, float aperture,
 	return getDoFOffset(sampleIndex, sampleCount, camMat, config, time);
 }
 
-// Shades a surface hit with lighting, fresnel, and reflection
+// O(n): Estimate thickness for transmissive materials along a ray.
+// startPos: starting point just inside the surface
+// dir: normalized refraction direction
+// Returns: approximate thickness through the object
+float estimateTransmissionThickness(vec3 startPos, vec3 dir) {
+	float thickness = 0.0;
+	vec3 pos = startPos;
+	for (int i = 0; i < 6; i++) {
+		float d = getDist(pos).w;
+		if (d > 0.002) {
+			break;
+		}
+		float stepSize = clamp(-d, 0.02, 0.12);
+		pos += dir * stepSize;
+		thickness += stepSize;
+	}
+	return thickness;
+}
+
+// O(n): March through the interior of a transmissive object until exit.
+// ro: starting point inside the object
+// rd: refracted ray direction
+// ior: index of refraction for exit calculation
+// Returns: exit position, exit normal (outward), and distance traveled
+void marchThroughObject(vec3 ro, vec3 rd, float ior, out vec3 exitPos, out vec3 exitNormal, out float thickness) {
+	thickness = 0.0;
+	vec3 pos = ro;
+	
+	for (int i = 0; i < 64; i++) {
+		float d = getDist(pos).w;
+		if (d > MIN_DIST * 2.0) {
+			exitPos = pos;
+			exitNormal = getNorm(pos);
+			return;
+		}
+		float step = max(abs(d), 0.01);
+		pos += rd * step;
+		thickness += step;
+		if (thickness > 2.0) break;
+	}
+	exitPos = pos;
+	exitNormal = getNorm(pos);
+}
+
+// O(n): Trace refraction through a transmissive object (entry + exit).
+// hitPos: entry point on surface
+// rd: incoming ray direction
+// normal: surface normal at entry (pointing outward)
+// ior: index of refraction
+// tint: material tint color
+// bgCol: background color fallback
+// Returns: color seen through the transparent object
+vec3 traceRefraction(vec3 hitPos, vec3 rd, vec3 normal, float ior, vec3 tint, vec3 bgCol) {
+	float eta = 1.0 / max(ior, 1.001);
+	vec3 T = refract(rd, normal, eta);
+	
+	if (dot(T, T) < 0.0001) {
+		return bgCol;
+	}
+	
+	vec3 entryPos = hitPos - normal * (MIN_DIST * 10.0);
+	
+	vec3 exitPos, exitNormal;
+	float thickness;
+	marchThroughObject(entryPos, T, ior, exitPos, exitNormal, thickness);
+	
+	float etaExit = max(ior, 1.001);
+	vec3 exitDir = refract(T, -exitNormal, etaExit);
+	
+	if (dot(exitDir, exitDir) < 0.0001) {
+		exitDir = reflect(T, -exitNormal);
+	}
+	
+	vec3 exitRo = exitPos + exitNormal * (MIN_DIST * 10.0);
+	vec4 behindScene = map(exitRo, exitDir);
+	float behindDist = behindScene.w;
+	
+	vec3 behindColor = bgCol;
+	if (behindDist < farClip) {
+		vec3 behindHit = exitRo + exitDir * behindDist;
+		vec3 behindMat = behindScene.rgb;
+		vec3 behindNorm = getNorm(behindHit);
+		behindColor = getLight(behindHit, exitDir, behindMat, behindNorm) + gMaterial.emission;
+	}
+	
+	vec3 absorption = exp(-(vec3(1.0) - tint) * thickness * 2.5);
+	vec3 tintedColor = behindColor * absorption;
+	tintedColor = mix(tintedColor, tintedColor * tint, 0.3);
+	return tintedColor;
+}
+
+// O(n): Shades a surface hit with lighting, fresnel, and reflection.
 // hitPos: world position of the ray hit
 // rd: ray direction
 // material: surface material color
@@ -80,6 +171,8 @@ vec3 shadeHit(vec3 hitPos, vec3 rd, vec3 material, vec3 bgCol) {
 	float metallic = gMaterial.metallic;
 	float roughness = gMaterial.roughness;
 	vec3 emission = gMaterial.emission;  // Save emission before getLight overwrites gMaterial
+	float transmission = gMaterial.transmission;
+	float ior = gMaterial.ior;
 	
 	// Fresnel with metallic influence (Schlick approximation)
 	// Metals have high base reflectivity, dielectrics have low (~0.04)
@@ -94,19 +187,43 @@ vec3 shadeHit(vec3 hitPos, vec3 rd, vec3 material, vec3 bgCol) {
 	// Calculate emission strength (0 = no glow, 1 = full glow)
 	float emissionStrength = clamp(length(emission) / 3.0, 0.0, 1.0);
 	
-	// Direct lighting - reduced for emissive and highly reflective surfaces
+	// Direct lighting - reduced for emissive, reflective, and transmissive surfaces
 	// Emissive objects don't need external lighting - they glow uniformly
-	float lightingFactor = (1.0 - reflectionStrength * 0.7) * (1.0 - emissionStrength);
+	bool isTransmissive = transmission > 0.2;
+	float transmissionDampen = isTransmissive ? 0.0 : 1.0;
+	float lightingFactor = (1.0 - reflectionStrength * 0.7) * (1.0 - emissionStrength) * transmissionDampen;
 	vec3 col = getLight(hitPos, rd, material, normals) * lightingFactor;
 
+	vec3 reflectionCol = vec3(0.0);
+#if RM_ENABLE_REFLECTIONS
 	// Skip reflections for rough or highly emissive surfaces
 	if (roughness < 0.85 && emissionStrength < 0.5) {
 		vec3 R = reflect(rd, normals);
 		vec3 reflRo = hitPos + normals * (MIN_DIST * 4.0);
 		vec3 reflColor = getFirstReflection(reflRo, R, bgCol);
 		vec3 reflTint = mix(vec3(1.0), material, metallic * 0.5);
-		col += reflColor * reflTint * reflectionStrength;
+		reflectionCol = reflColor * reflTint;
+		float reflStrength = reflectionStrength;
+		if (isTransmissive) {
+			reflStrength *= 0.35;
+		}
+		col += reflectionCol * reflStrength;
 	}
+#endif
+
+#if RM_ENABLE_REFRACTION
+	if (transmission > 0.0 && ior > 1.0) {
+		vec3 refrColor = traceRefraction(hitPos, rd, normals, ior, material, bgCol);
+		
+		float fresnelRefl = reflectionStrength;
+		float fresnelTrans = 1.0 - fresnelRefl;
+		
+		col = refrColor * fresnelTrans + reflectionCol * fresnelRefl * 0.7;
+		
+		float edgeHighlight = pow(1.0 - max(dot(normals, -rd), 0.0), 4.0) * 0.15;
+		col += vec3(edgeHighlight);
+	}
+#endif
 	
 	// Add emission (self-illumination) - this is the dominant color for glowing objects
 	col += emission;

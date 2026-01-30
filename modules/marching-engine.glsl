@@ -132,6 +132,7 @@ vec4 getDist(vec3 pos){ // Compose your scene here
 	);
 	scene = sceneSmin(scene, cube, 0.05);
 	
+#if RM_ENABLE_EMISSIVE
 	// Emissive spheres (uses centralized multi-emissive definition)
 	for (int i = 0; i < NUM_EMISSIVES; i++) {
 		vec4 emissiveSource = getEmissiveSource(i);
@@ -143,8 +144,10 @@ vec4 getDist(vec3 pos){ // Compose your scene here
 		);
 		scene = sceneMin(scene, glowSphere);
 	}
+#endif
 	
-	// Subsurface scattering showcase: 4 spheres in a row (highest row)
+	// Subsurface scattering showcase: 4 spheres in a row (upper row)
+#if RM_ENABLE_SSS
 	float sssRadius = 0.1;
 	float sssSpacing = 0.3;
 	float sssY = 0.42 + sin(iTime * 0.6) * 0.01;
@@ -181,8 +184,10 @@ vec4 getDist(vec3 pos){ // Compose your scene here
 		matMarble()
 	);
 	scene = sceneMin(scene, marbleSphere);
+#endif
 	
 	// Iridescent material showcase: 4 spheres in a row above main materials
+#if RM_ENABLE_IRIDESCENCE
 	float iriRadius = 0.1;
 	float iriSpacing = 0.3;
 	float iriY = 0.28 + sin(iTime * 0.7) * 0.015;
@@ -219,6 +224,50 @@ vec4 getDist(vec3 pos){ // Compose your scene here
 		matPearl()
 	);
 	scene = sceneMin(scene, pearl);
+#endif
+
+	// Transparent + toon showcase: row above SSS
+#if RM_ENABLE_REFRACTION || RM_ENABLE_TOON
+	float transRadius = 0.095;
+	float transSpacing = 0.28;
+	float transY = 0.56 + sin(iTime * 0.5) * 0.01;
+	float transZ = 0.8;
+	
+#if RM_ENABLE_REFRACTION
+	// Glass sphere - amber tint like antique bottle glass
+	vec3 trans1 = pos - vec3(-transSpacing * 1.5, transY, transZ);
+	SceneResult glassSphere = sceneResult(
+		fSphere(trans1, transRadius),
+		matGlass()
+	);
+	scene = sceneMin(scene, glassSphere);
+	
+	// Water sphere - deep aqua-cyan like tropical ocean
+	vec3 trans2 = pos - vec3(-transSpacing * 0.5, transY + 0.01, transZ - 0.05);
+	SceneResult waterSphere = sceneResult(
+		fSphere(trans2, transRadius),
+		matWater()
+	);
+	scene = sceneMin(scene, waterSphere);
+	
+	// Crystal sphere - amethyst purple gem with high refraction
+	vec3 trans3 = pos - vec3(transSpacing * 0.5, transY + 0.02, transZ - 0.1);
+	SceneResult crystalSphere = sceneResult(
+		fSphere(trans3, transRadius),
+		matCrystal()
+	);
+	scene = sceneMin(scene, crystalSphere);
+#endif
+	
+#if RM_ENABLE_TOON
+	vec3 trans4 = pos - vec3(transSpacing * 1.5, transY + 0.03, transZ - 0.15);
+	SceneResult toonSphere = sceneResult(
+		fSphere(trans4, transRadius),
+		matToon(vec3(0.2, 0.6, 0.9), 4.0)
+	);
+	scene = sceneMin(scene, toonSphere);
+#endif
+#endif
 	
 	// Set global material for lighting to use
 	gMaterial = scene.mat;

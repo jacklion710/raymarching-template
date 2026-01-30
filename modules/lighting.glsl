@@ -20,6 +20,7 @@ vec3 getNorm(vec3 hitPos){ // Normal calculation for lighting
 // hitPos: hit position
 // normal: normal vector
 float getAmbientOcclusion(vec3 hitPos, vec3 normal){
+#if RM_ENABLE_AMBIENT_OCCLUSION
 	float occ = 0.0;
 	float sca = 1.0;
 	for(int i = 0; i < 5; i++){
@@ -32,6 +33,9 @@ float getAmbientOcclusion(vec3 hitPos, vec3 normal){
 		sca *= 0.5;
 	}
 	return clamp(1.0 - 3.0 * occ, 0.0, 1.0);
+#else
+	return 1.0;
+#endif
 }
 
 // O(n): Shadow calculation with soft penumbra.
@@ -174,13 +178,20 @@ vec3 getLight(vec3 hitPos, vec3 rd, vec3 mate, vec3 normals){
 	float iridescence = gMaterial.iridescence;
 	float subsurface = gMaterial.subsurface;
 	vec3 subsurfaceCol = gMaterial.subsurfaceCol;
+	float toonSteps = gMaterial.toonSteps;
+
+#if !RM_ENABLE_IRIDESCENCE
+	iridescence = 0.0;
+#endif
 	
 	// Apply iridescence if present (view-dependent color shift)
+#if RM_ENABLE_IRIDESCENCE
 	if (iridescence > 0.0) {
 		float NdotV = max(dot(normals, -rd), 0.0);
 		vec3 iriColor = getIridescentColor(NdotV, mate);
 		mate = mix(mate, iriColor, iridescence);
 	}
+#endif
 	
 	// Base vectors
 	vec3 lightDir = normalize(hitPos - lightPos);
@@ -199,6 +210,16 @@ vec3 getLight(vec3 hitPos, vec3 rd, vec3 mate, vec3 normals){
 	// For iridescent materials, tint specular with the shifted color
 	vec3 specColor = mix(vec3(0.5), mate, max(metallic, iridescence * 0.5));
 	vec3 specular = specColor * spec;
+
+#if RM_ENABLE_TOON
+	if (toonSteps > 0.0) {
+		float steps = max(toonSteps, 1.0);
+		float toonDiffuse = floor(NdotL * steps) / steps;
+		float toonSpec = step(0.75, spec);
+		diffuse = mate * toonDiffuse * (1.0 - metallic * 0.9);
+		specular = specColor * toonSpec;
+	}
+#endif
 	
 	// Environment/ambient - softer shadows for rough surfaces
 	float occ = getAmbientOcclusion(hitPos, normals);
@@ -209,12 +230,13 @@ vec3 getLight(vec3 hitPos, vec3 rd, vec3 mate, vec3 normals){
 	float emissionStrength = clamp(length(gMaterial.emission) / 3.0, 0.0, 1.0);
 	shadow = mix(shadow, 1.0, emissionStrength);
 	
-	vec3 ambient = vec3(0.12) * mate * occ;  // Darker ambient for contrast
+	vec3 ambient = vec3(0.1) * mate * occ;  // Ambient for visibility
 	
-	float lightIntensity = 0.5;  // Reduced main light
+	float lightIntensity = 0.28;  // Main light intensity
 	vec3 col = (diffuse + specular) * lightIntensity * shadow + ambient;
 	
 	// Subsurface scattering: light penetrating and scattering inside the material
+#if RM_ENABLE_SSS
 	if (subsurface > 0.0) {
 		// Estimate thickness by sampling SDF behind the surface
 		float thickness = 0.0;
@@ -243,6 +265,7 @@ vec3 getLight(vec3 hitPos, vec3 rd, vec3 mate, vec3 normals){
 		vec3 sssColor = subsurfaceCol * scatter * subsurface * lightIntensity * 1.5;
 		col += sssColor;
 	}
+#endif
 
 #if USE_POINT_LIGHT
 	// {   // Sky light
@@ -256,6 +279,7 @@ vec3 getLight(vec3 hitPos, vec3 rd, vec3 mate, vec3 normals){
 	// }
 	
 	// Emissive area lights (loops through all centralized emissive definitions)
+#if RM_ENABLE_EMISSIVE
 	for (int i = 0; i < NUM_EMISSIVES; i++) {
 		vec4 source = getEmissiveSource(i);
 		vec4 props = getEmissiveProperties(i);
@@ -281,18 +305,21 @@ vec3 getLight(vec3 hitPos, vec3 rd, vec3 mate, vec3 normals){
 		
 		col += emissiveDiffuse * emissiveAtt * surfaceFade * emissiveCol * mate * emissivePower;
 	}
+#endif
 	
+#if RM_ENABLE_SPOTLIGHT
 	{   // Spotlight (backlighting SSS row)
 		// Position BEHIND the SSS spheres, pointing toward camera
 		vec3 spotPos = vec3(0.0, 0.5, 1.2);
 		vec3 spotTarget = vec3(0.0, 0.4, 0.0);
 		vec3 spotDir = normalize(spotTarget - spotPos);
-		vec3 spotCol = vec3(1.0, 0.98, 0.95) * 1.0;  // Reduced intensity
+		vec3 spotCol = vec3(1.0, 0.98, 0.95) * 0.4;  // Spotlight intensity
 		float innerAngle = 0.5;
 		float outerAngle = 0.9;
 		
 		col += getSpotLight(hitPos, spotPos, spotDir, normals, rd, spotCol, innerAngle, outerAngle);
 	}
+#endif
 #endif
 
 	return col;

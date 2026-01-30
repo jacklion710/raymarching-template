@@ -8,10 +8,14 @@ NOTE: Later it may be nice to add controls to enable/disable different lighting 
 
 TODO:
 - Implement new materials
-    - Transparency/Refraction - Glass, water, crystals (requires ray bending)
-    - Toon/Cel Shading - Stylized stepped lighting for cartoon look
+    - Transparency/Refraction - Glass, water, crystals with refraction toggle (RM_ENABLE_REFRACTION)
+    - Toon/Cel Shading - Stylized stepped lighting with band controls (RM_ENABLE_TOON)
 - Material enhancements
-- Ensure union ops still blend materials accurately
+    - Should SSS really emit as much light as it currently does or should it absorb most of it instead?
+    - Explore iridescence enhancements if any
 - Anti aliasing
+- Denoising
 - Palette function and lighting for hetti styles
 - Glean/glimmer for metallic materials
+- stagger control for flickering so they're not all in sync
+- SSS light absotption fix

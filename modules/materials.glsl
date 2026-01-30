@@ -8,10 +8,13 @@ struct Material {
 	float iridescence;  // 0 = none, 1 = full thin-film interference effect
 	float subsurface;   // 0 = none, 1 = full subsurface scattering
 	vec3 subsurfaceCol; // Color of light transmitted through the material
+	float transmission; // 0 = opaque, 1 = fully transmissive
+	float ior;          // Index of refraction (1.0 = air)
+	float toonSteps;    // 0 = disable, >0 = toon band count
 };
 
 // Global material set by getDist, read by lighting functions
-Material gMaterial = Material(vec3(0.5), 0.0, 0.5, vec3(0.0), 0.0, 0.0, vec3(1.0));
+Material gMaterial = Material(vec3(0.5), 0.0, 0.5, vec3(0.0), 0.0, 0.0, vec3(1.0), 0.0, 1.0, 0.0);
 
 // Compute iridescent color based on view angle (thin-film interference)
 // viewAngle: dot(normal, viewDir), typically 0-1
@@ -39,8 +42,13 @@ vec3 getIridescentColor(float viewAngle, vec3 baseColor) {
 vec4 getEmissiveSource(int index) {
 	// SSS sphere positions (must match marching-engine.glsl)
 	float sssSpacing = 0.3;
+#if RM_ENABLE_SSS
 	float sssY = 0.42 + sin(iTime * 0.6) * 0.01;
 	float sssZ = 0.65;
+#else
+	float sssY = 0.32;
+	float sssZ = 0.45;
+#endif
 	
 	if (index == 0) {
 		// Red - inside SKIN sphere (blood glow)
@@ -69,14 +77,14 @@ vec4 getEmissiveSource(int index) {
 vec4 getEmissiveProperties(int index) {
 	float glowPulse = 0.8 + 0.2 * sin(iTime * 2.0 + float(index) * 2.0);
 	float flicker = 0.9 + 0.1 * sin(iTime * 8.0) * sin(iTime * 12.0 + 1.0);
-	float interiorIntensity = 6.0 * flicker;  // Moderate for visible SSS
+	float interiorIntensity = 2.0 * flicker;  // Subtle glow for SSS materials
 	
 	if (index == 0) {
 		// Red - inside skin (blood/flesh glow)
 		return vec4(1.0, 0.15, 0.1, interiorIntensity);
 	} else if (index == 1) {
 		// Green - standalone
-		return vec4(0.2, 1.0, 0.3, 3.0 * glowPulse);
+		return vec4(0.2, 1.0, 0.3, 1.0 * glowPulse);
 	} else if (index == 2) {
 		// Blue/Cyan - inside marble (cool ethereal)
 		return vec4(0.4, 0.7, 1.0, interiorIntensity);
@@ -88,114 +96,138 @@ vec4 getEmissiveProperties(int index) {
 		return vec4(0.2, 1.0, 0.6, interiorIntensity);
 	} else {
 		// Spotlight marker (dim)
-		return vec4(1.0, 0.95, 0.9, 1.0);
+		return vec4(1.0, 0.95, 0.9, 0.25);
 	}
 }
 
 // Create a basic dielectric (non-metal) material
 Material createMaterial(vec3 albedo) {
-	return Material(albedo, 0.0, 0.5, vec3(0.0), 0.0, 0.0, vec3(1.0));
+	return Material(albedo, 0.0, 0.5, vec3(0.0), 0.0, 0.0, vec3(1.0), 0.0, 1.0, 0.0);
 }
 
 // Create a material with metallic/roughness control
 Material createMaterial(vec3 albedo, float metallic, float roughness) {
-	return Material(albedo, metallic, roughness, vec3(0.0), 0.0, 0.0, vec3(1.0));
+	return Material(albedo, metallic, roughness, vec3(0.0), 0.0, 0.0, vec3(1.0), 0.0, 1.0, 0.0);
 }
 
 // Create a material with full control including emission
 Material createMaterial(vec3 albedo, float metallic, float roughness, vec3 emission) {
-	return Material(albedo, metallic, roughness, emission, 0.0, 0.0, vec3(1.0));
+	return Material(albedo, metallic, roughness, emission, 0.0, 0.0, vec3(1.0), 0.0, 1.0, 0.0);
 }
 
 // Create a material with full control including iridescence
 Material createMaterial(vec3 albedo, float metallic, float roughness, vec3 emission, float iridescence) {
-	return Material(albedo, metallic, roughness, emission, iridescence, 0.0, vec3(1.0));
+	return Material(albedo, metallic, roughness, emission, iridescence, 0.0, vec3(1.0), 0.0, 1.0, 0.0);
 }
 
 // Create a material with full control including subsurface scattering
 Material createMaterial(vec3 albedo, float metallic, float roughness, vec3 emission, float iridescence, float subsurface, vec3 subsurfaceCol) {
-	return Material(albedo, metallic, roughness, emission, iridescence, subsurface, subsurfaceCol);
+	return Material(albedo, metallic, roughness, emission, iridescence, subsurface, subsurfaceCol, 0.0, 1.0, 0.0);
 }
 
 // Preset materials
 Material matPlastic(vec3 color) {
-	return Material(color, 0.0, 0.4, vec3(0.0), 0.0, 0.0, vec3(1.0));
+	return Material(color, 0.0, 0.4, vec3(0.0), 0.0, 0.0, vec3(1.0), 0.0, 1.0, 0.0);
 }
 
 Material matMetal(vec3 color) {
-	return Material(color, 1.0, 0.3, vec3(0.0), 0.0, 0.0, vec3(1.0));
+	return Material(color, 1.0, 0.3, vec3(0.0), 0.0, 0.0, vec3(1.0), 0.0, 1.0, 0.0);
 }
 
 // Polished gold - very shiny with warm reflections
 Material matGold() {
-	return Material(vec3(1.0, 0.76, 0.33), 1.0, 0.05, vec3(0.0), 0.0, 0.0, vec3(1.0));
+	return Material(vec3(1.0, 0.76, 0.33), 1.0, 0.05, vec3(0.0), 0.0, 0.0, vec3(1.0), 0.0, 1.0, 0.0);
 }
 
 Material matRoughMetal(vec3 color) {
-	return Material(color, 1.0, 0.7, vec3(0.0), 0.0, 0.0, vec3(1.0));
+	return Material(color, 1.0, 0.7, vec3(0.0), 0.0, 0.0, vec3(1.0), 0.0, 1.0, 0.0);
 }
 
 Material matMirror() {
-	return Material(vec3(0.9), 1.0, 0.0, vec3(0.0), 0.0, 0.0, vec3(1.0));
+	return Material(vec3(0.9), 1.0, 0.0, vec3(0.0), 0.0, 0.0, vec3(1.0), 0.0, 1.0, 0.0);
 }
 
 Material matRubber(vec3 color) {
-	return Material(color, 0.0, 0.9, vec3(0.0), 0.0, 0.0, vec3(1.0));
+	return Material(color, 0.0, 0.9, vec3(0.0), 0.0, 0.0, vec3(1.0), 0.0, 1.0, 0.0);
 }
 
 // Glowing/emissive materials
 Material matGlow(vec3 color, float intensity) {
-	return Material(color, 0.0, 1.0, color * intensity, 0.0, 0.0, vec3(1.0));
+	return Material(color, 0.0, 1.0, color * intensity, 0.0, 0.0, vec3(1.0), 0.0, 1.0, 0.0);
 }
 
 Material matNeon(vec3 color) {
-	return Material(color, 0.0, 0.8, color * 4.0, 0.0, 0.0, vec3(1.0));
+	return Material(color, 0.0, 0.8, color * 4.0, 0.0, 0.0, vec3(1.0), 0.0, 1.0, 0.0);
 }
 
 Material matLava(vec3 color) {
-	return Material(color * 0.5, 0.0, 0.9, color * 3.0, 0.0, 0.0, vec3(1.0));
+	return Material(color * 0.5, 0.0, 0.9, color * 3.0, 0.0, 0.0, vec3(1.0), 0.0, 1.0, 0.0);
 }
 
 Material matHotMetal(vec3 color) {
-	return Material(color, 0.8, 0.4, color * 2.5, 0.0, 0.0, vec3(1.0));
+	return Material(color, 0.8, 0.4, color * 2.5, 0.0, 0.0, vec3(1.0), 0.0, 1.0, 0.0);
 }
 
 // Iridescent materials (color shifts with view angle)
 Material matSoapBubble() {
-	return Material(vec3(0.9, 0.95, 1.0), 0.0, 0.1, vec3(0.0), 1.0, 0.0, vec3(1.0));
+	return Material(vec3(0.9, 0.95, 1.0), 0.0, 0.1, vec3(0.0), 1.0, 0.0, vec3(1.0), 0.0, 1.0, 0.0);
 }
 
 Material matOilSlick() {
-	return Material(vec3(0.05, 0.05, 0.1), 0.3, 0.2, vec3(0.0), 0.9, 0.0, vec3(1.0));
+	return Material(vec3(0.05, 0.05, 0.1), 0.3, 0.2, vec3(0.0), 0.9, 0.0, vec3(1.0), 0.0, 1.0, 0.0);
 }
 
 Material matBeetleShell(vec3 baseColor) {
-	return Material(baseColor, 0.6, 0.3, vec3(0.0), 0.7, 0.0, vec3(1.0));
+	return Material(baseColor, 0.6, 0.3, vec3(0.0), 0.7, 0.0, vec3(1.0), 0.0, 1.0, 0.0);
 }
 
 Material matPearl() {
-	return Material(vec3(0.95, 0.93, 0.88), 0.0, 0.3, vec3(0.0), 0.4, 0.0, vec3(1.0));
+	return Material(vec3(0.95, 0.93, 0.88), 0.0, 0.3, vec3(0.0), 0.4, 0.0, vec3(1.0), 0.0, 1.0, 0.0);
 }
 
 // Subsurface scattering materials (light penetrates and scatters inside)
 // Wax: warm translucent material (orange/red glow when backlit)
 Material matWax(vec3 color) {
-	return Material(color, 0.0, 0.6, vec3(0.0), 0.0, 1.0, vec3(1.0, 0.5, 0.2));
+	return Material(color, 0.0, 0.6, vec3(0.0), 0.0, 1.0, vec3(1.0, 0.5, 0.2), 0.0, 1.0, 0.0);
 }
 
 // Skin: realistic flesh tones with strong red SSS
 Material matSkin(vec3 color) {
-	return Material(color, 0.0, 0.5, vec3(0.0), 0.0, 0.9, vec3(1.0, 0.2, 0.1));
+	return Material(color, 0.0, 0.5, vec3(0.0), 0.0, 0.9, vec3(1.0, 0.2, 0.1), 0.0, 1.0, 0.0);
 }
 
 // Jade: green stone with bright green internal glow
 Material matJade(vec3 color) {
-	return Material(color, 0.0, 0.3, vec3(0.0), 0.0, 1.0, vec3(0.3, 1.0, 0.4));
+	return Material(color, 0.0, 0.3, vec3(0.0), 0.0, 1.0, vec3(0.3, 1.0, 0.4), 0.0, 1.0, 0.0);
 }
 
 // Marble: white stone with warm translucency
 Material matMarble() {
-	return Material(vec3(0.95, 0.93, 0.9), 0.0, 0.2, vec3(0.0), 0.0, 0.7, vec3(1.0, 0.9, 0.7));
+	return Material(vec3(0.95, 0.93, 0.9), 0.0, 0.2, vec3(0.0), 0.0, 0.7, vec3(1.0, 0.9, 0.7), 0.0, 1.0, 0.0);
+}
+
+// O(1): Transparent glass material setup.
+// Warm amber tint like antique bottle glass
+Material matGlass() {
+	return Material(vec3(0.95, 0.75, 0.5), 0.0, 0.12, vec3(0.0), 0.0, 0.0, vec3(1.0), 0.92, 1.52, 0.0);
+}
+
+// O(1): Transparent water/liquid material setup.
+// Deep aqua-cyan like tropical ocean
+Material matWater() {
+	return Material(vec3(0.3, 0.85, 0.95), 0.0, 0.02, vec3(0.0), 0.0, 0.0, vec3(1.0), 0.98, 1.33, 0.0);
+}
+
+// O(1): Transparent crystal/gem material setup.
+// Rich amethyst purple with high IOR for strong refraction
+Material matCrystal() {
+	return Material(vec3(0.7, 0.3, 0.9), 0.0, 0.01, vec3(0.0), 0.15, 0.0, vec3(1.0), 0.96, 2.0, 0.0);
+}
+
+// O(1): Toon material setup (steps control banding).
+// steps: number of discrete lighting bands
+Material matToon(vec3 color, float steps) {
+	return Material(color, 0.0, 0.6, vec3(0.0), 0.0, 0.0, vec3(1.0), 0.0, 1.0, steps);
 }
 
 // Blend two materials (useful for smooth transitions)
@@ -207,6 +239,9 @@ Material mixMaterial(Material a, Material b, float t) {
 		mix(a.emission, b.emission, t),
 		mix(a.iridescence, b.iridescence, t),
 		mix(a.subsurface, b.subsurface, t),
-		mix(a.subsurfaceCol, b.subsurfaceCol, t)
+		mix(a.subsurfaceCol, b.subsurfaceCol, t),
+		mix(a.transmission, b.transmission, t),
+		mix(a.ior, b.ior, t),
+		mix(a.toonSteps, b.toonSteps, t)
 	);
 }
