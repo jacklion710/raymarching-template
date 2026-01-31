@@ -17,7 +17,6 @@ layout (location = 0) out vec4 outColor;
 void main(void) {
 	// Output color
 	vec3 col = vec3(0.0);
-	vec3 bgCol = vec3(0.4);  // Darker background for material contrast
 	float dist = 0.0;
 
 	// Ray origin (camera position)
@@ -31,6 +30,10 @@ void main(void) {
 	// Ray direction
 	float planeDist = 1.6; // Distance to the plane
 	vec3 rd = normalize(camMat * vec3(jit_in.texcoord, planeDist));
+	
+	// UV coords for screen-space effects (0 to 1)
+	vec2 uv = jit_in.texcoord * 0.5 + 0.5;
+	vec3 bgCol = getBackground(rd, ro, uv);
 
 #ifdef DOF_ENABLED
 	// DoF configuration
@@ -78,11 +81,8 @@ void main(void) {
 	}
 #endif
 
-	// UV coords for screen-space effects (0 to 1)
-	vec2 uv = jit_in.texcoord * 0.5 + 0.5;
 	getPostProcessing(col, rd, ro, bgCol, dist, uv);
 	
 	// Output the color
 	outColor = vec4(col, 1.0);
 }
-

@@ -317,4 +317,10 @@ vec4 showcaseScene(vec3 pos){
 	return vec4(scene.mat.albedo, scene.dist);
 }
 
+// O(1): Scene-specific background
+vec3 showcaseBackground(vec3 rd, vec3 ro, vec2 uv) {
+	// Sky-like procedural background (world-space, follows camera rotation).
+	return rmDefaultBackground(rd, ro);
+}
+
 #endif

@@ -238,4 +238,81 @@ vec4 causticScene(vec3 pos) {
 	return vec4(scene.mat.albedo, scene.dist);
 }
 
+// O(1): Scene-specific background
+vec3 causticBackground(vec3 rd, vec3 ro, vec2 uv) {
+	// Scene backgrounds should read as "sky": evaluate in ray-direction space (rd),
+	// not in screen space (uv). This ensures the background sits behind geometry
+	// and rotates naturally with the camera.
+
+	// Base sky
+	vec3 baseCol = rmDefaultBackground(rd, ro);
+
+	// Re-introduce the geometric caustics pattern, but mapped onto the sky dome.
+	// Using sky UV keeps the pattern stable in world space instead of overlaying the screen.
+	vec2 suv = rmSkyUV(rd);
+
+	// Fade pattern out near the horizon and below it.
+	float aboveHorizon = smoothstep(0.02, 0.10, rd.y);
+	float zenithFade = 1.0 - smoothstep(0.55, 0.95, suv.y);
+	float patFade = aboveHorizon * zenithFade;
+
+	// Hexagonal tiling coordinates
+	const float HEX_SCALE = 22.0;
+	const float SQRT3 = 1.7320508;
+	vec2 uvHex = suv * HEX_SCALE;
+
+	// Skew to hex grid coordinates
+	vec2 q = vec2(
+		uvHex.x - uvHex.y / SQRT3,
+		uvHex.y * 2.0 / SQRT3
+	);
+
+	// Identify hex tile center
+	vec2 id = floor(q);
+	vec2 hex;
+	hex.x = id.x + (id.y / 2.0);
+	hex.y = id.y;
+
+	// Center position of the current hex tile in "hex space"
+	vec2 hexCenter = vec2(
+		hex.x + 0.5 * mod(hex.y, 2.0),
+		hex.y * SQRT3 * 0.5
+	);
+
+	// Local coordinates within the hex tile
+	vec2 local = uvHex - hexCenter;
+
+	// Animate color using tile ID and time
+	float hue = fract((hex.x * 0.19 + hex.y * 0.073 + 0.13 * iTime));
+	vec3 prism = 0.70 + 0.30 * cos(6.2831 * (hue + vec3(0.0, 0.33, 0.66)));
+
+	// Mask out hexagon shape (distance from center in hex tile space)
+	float hexRadius = 0.42;
+	float ax = abs(local.x), ay = abs(local.y);
+	float innerHex = max(
+		ax * 0.8660254 + ay * 0.5,
+		ay
+	) - hexRadius;
+	float edge = smoothstep(0.035, 0.0, innerHex);
+
+	// Animated geometric line pattern inside hexes
+	float linePattern = sin(36.0 * (local.x + local.y) + iTime * 0.7) * 0.5 + 0.5;
+	linePattern *= smoothstep(0.10, 0.00, abs(local.x - local.y));
+
+	// Micro tessellation inside each hex
+	vec2 micro = fract(local * 10.0 + 0.5) - 0.5;
+	float microD = max(abs(micro.x), abs(micro.y));
+	float microShape = smoothstep(0.22, 0.08, microD);
+
+	vec3 patternCol =
+		prism * edge * (0.7 + 0.22 * linePattern)
+		+ vec3(1.0) * linePattern * edge * 0.07
+		+ vec3(0.85, 0.9, 1.0) * microShape * edge * 0.18;
+
+	// Blend pattern into sky
+	baseCol += patternCol * patFade * 0.55;
+
+	return baseCol;
+}
+
 #endif

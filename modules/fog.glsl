@@ -3,8 +3,11 @@
 // bgCol: background color
 // dist: distance to the object
 vec3 distanceFog(vec3 col, vec3 bgCol, float dist){
-    // Distance fog is useful for simple linear fog.
-	return mix(col, bgCol, dist / farClip);
+	// Fog factor is shaped so near objects stay clear and the sky reads as "behind".
+	float fogStart = farClip * 0.25;
+	float fogEnd = farClip;
+	float f = smoothstep(fogStart, fogEnd, dist);
+	return mix(col, bgCol, f);
 }
 
 // O(1): Color fog.

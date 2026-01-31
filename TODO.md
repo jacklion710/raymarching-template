@@ -7,9 +7,8 @@
 - [ ] Denoising pass
 - [ ] Multipass (Max/Jitter slab chain): render raymarch pass to texture (pack depth/aux), then post passes for bloom + FXAA + SSS + optional temporal accumulation; [watch this](https://www.youtube.com/watch?v=9O80hGMtW6Q)
 - [ ] Glean/glimmer effect for metallic materials
-- [ ] Interesting procedural background
+- [x] Interesting procedural background
 - [ ] Environment map background
-- [x] Flag for global illumination
 
 ### SSS Improvements
 - [ ] Review SSS light absorption vs emission balance

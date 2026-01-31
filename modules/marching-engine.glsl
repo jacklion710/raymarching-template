@@ -28,6 +28,10 @@ vec4 showcaseScene(vec3 pos);
 vec4 causticScene(vec3 pos);
 vec4 sssDemoScene(vec3 pos);
 
+vec3 showcaseBackground(vec3 rd, vec3 ro, vec2 uv);
+vec3 causticBackground(vec3 rd, vec3 ro, vec2 uv);
+vec3 sssDemoBackground(vec3 rd, vec3 ro, vec2 uv);
+
 // O(1): Get the distance bound to the nearest surface in the scene.
 // pos: world-space position being sampled
 // Scene selection controlled by RM_ACTIVE_SCENE in globals.glsl
@@ -38,6 +42,17 @@ vec4 getDist(vec3 pos) {
 	return causticScene(pos);
 #elif RM_ACTIVE_SCENE == SCENE_SSS_DEMO
 	return sssDemoScene(pos);
+#endif
+}
+
+// Scene-specific background selection (used for fog/reflections/refraction).
+vec3 getBackground(vec3 rd, vec3 ro, vec2 uv) {
+#if RM_ACTIVE_SCENE == SCENE_SHOWCASE
+	return showcaseBackground(rd, ro, uv);
+#elif RM_ACTIVE_SCENE == SCENE_CAUSTICS
+	return causticBackground(rd, ro, uv);
+#elif RM_ACTIVE_SCENE == SCENE_SSS_DEMO
+	return sssDemoBackground(rd, ro, uv);
 #endif
 }
 

@@ -28,6 +28,7 @@
 
 <include source="globals.glsl" program="fp" />
 <include source="noise.glsl" program="fp" />
+<include source="background.glsl" program="fp" />
 <include source="modifiers.glsl" program="fp" />
 <include source="rotate.glsl" program="fp" />
 <include source="hg_sdf.glsl" program="fp" />
