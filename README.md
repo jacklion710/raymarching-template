@@ -6,7 +6,7 @@ A modular raymarching shader template for Max/MSP Jitter with PBR materials, adv
 
 - **PBR Material System** - Metallic/roughness workflow with full material control
 - **Advanced Materials** - SSS, iridescence, transparency/refraction, toon shading
-- **Flexible Lighting** - Directional, point, and spot lights with colored caustic shadows
+- **Flexible Lighting** - Directional, point, and spot lights with colored caustic shadows and optional GI
 - **Modular Architecture** - Feature flags for enabling/disabling techniques
 - **Depth of Field** - Polygon-shaped bokeh with temporal jitter
 - **Extensible** - Clean separation of concerns for easy customization
@@ -61,6 +61,7 @@ Toggle rendering techniques in `globals.glsl`:
 #define RM_ENABLE_SPOTLIGHT 1        // Spot/point lights
 #define RM_ENABLE_AMBIENT_OCCLUSION 1
 #define RM_ENABLE_CAUSTIC_SHADOWS 1  // Colored shadows (expensive)
+#define RM_ENABLE_GI 0               // Cheap hemispherical GI
 ```
 
 Set to `0` to disable features for performance.

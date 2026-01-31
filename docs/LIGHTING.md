@@ -39,6 +39,7 @@ Surface Hit
 │              Final Composite            │
 │  lighting + reflections + refraction    │
 │  + emission                             │
+│  + GI (if enabled)                      │
 └─────────────────────────────────────────┘
 ```
 
@@ -293,6 +294,18 @@ float getAmbientOcclusion(vec3 hitPos, vec3 normal) {
 - 5 samples along normal
 - Emissive and transmissive objects excluded
 - Disabled for toon materials
+
+## Global Illumination (GI)
+
+Cheap hemispherical bounce lighting (toggle with `RM_ENABLE_GI`):
+
+```glsl
+vec3 getGlobalIllumination(vec3 normals, vec3 mate, float occ);
+```
+
+- Uses a sky/ground hemisphere blend
+- Multiplied by albedo and AO for contact‑aware bounce
+- Ambient term is reduced when GI is enabled to avoid double lighting
 
 ## Adding New Lights
 

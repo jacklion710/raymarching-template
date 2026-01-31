@@ -11,7 +11,7 @@
 #define SCENE_SSS_DEMO 2
 
 #ifndef RM_ACTIVE_SCENE
-#define RM_ACTIVE_SCENE SCENE_SSS_DEMO
+#define RM_ACTIVE_SCENE SCENE_CAUSTICS
 #endif
 
 // Raymarch settings
@@ -58,6 +58,10 @@
 
 #ifndef RM_ENABLE_CAUSTIC_SHADOWS
 #define RM_ENABLE_CAUSTIC_SHADOWS 1
+#endif
+
+#ifndef RM_ENABLE_GI
+#define RM_ENABLE_GI 1
 #endif
 
 // Shared uniforms (declared early so other include files can reference them)

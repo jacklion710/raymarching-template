@@ -20,6 +20,7 @@ All flags are defined in `globals.glsl`:
 #define RM_ENABLE_SPOTLIGHT 1
 #define RM_ENABLE_AMBIENT_OCCLUSION 1
 #define RM_ENABLE_CAUSTIC_SHADOWS 1
+#define RM_ENABLE_GI 0
 ```
 
 ## Flag Reference
@@ -158,6 +159,20 @@ All flags are defined in `globals.glsl`:
 
 **When to disable:** On weaker GPUs or when colored shadows aren't needed
 
+---
+
+### RM_ENABLE_GI
+
+**Controls:** Cheap hemispherical global illumination bounce
+
+**Affects:**
+- `getGlobalIllumination()` in lighting.glsl
+- Ambient balance in `getLight()` (ambient is reduced when GI is enabled)
+
+**Performance cost:** Low (simple per-pixel math)
+
+**When to disable:** For flat lighting or maximum performance
+
 ## Performance Presets
 
 ### Maximum Quality
@@ -171,6 +186,7 @@ All flags are defined in `globals.glsl`:
 #define RM_ENABLE_SPOTLIGHT 1
 #define RM_ENABLE_AMBIENT_OCCLUSION 1
 #define RM_ENABLE_CAUSTIC_SHADOWS 1
+#define RM_ENABLE_GI 0
 ```
 
 ### Balanced (Recommended)
@@ -184,6 +200,7 @@ All flags are defined in `globals.glsl`:
 #define RM_ENABLE_SPOTLIGHT 1
 #define RM_ENABLE_AMBIENT_OCCLUSION 1
 #define RM_ENABLE_CAUSTIC_SHADOWS 0  // Disable expensive caustics
+#define RM_ENABLE_GI 0
 ```
 
 ### Performance Mode
@@ -197,6 +214,7 @@ All flags are defined in `globals.glsl`:
 #define RM_ENABLE_SPOTLIGHT 0        // Single light only
 #define RM_ENABLE_AMBIENT_OCCLUSION 0
 #define RM_ENABLE_CAUSTIC_SHADOWS 0
+#define RM_ENABLE_GI 0
 ```
 
 ### Minimal (Maximum Performance)
@@ -210,6 +228,7 @@ All flags are defined in `globals.glsl`:
 #define RM_ENABLE_SPOTLIGHT 0
 #define RM_ENABLE_AMBIENT_OCCLUSION 0
 #define RM_ENABLE_CAUSTIC_SHADOWS 0
+#define RM_ENABLE_GI 0
 ```
 
 ## Raymarch Settings

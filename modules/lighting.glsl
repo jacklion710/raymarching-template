@@ -28,6 +28,19 @@ vec3 getSceneLights(vec3 hitPos, vec3 normals, vec3 rd, vec3 mate) {
 #endif
 }
 
+// Cheap hemispherical GI approximation (toggled by RM_ENABLE_GI).
+vec3 getGlobalIllumination(vec3 normals, vec3 mate, float occ) {
+#if RM_ENABLE_GI
+	float up = clamp(normals.y * 0.5 + 0.5, 0.0, 1.0);
+	vec3 skyBounce = vec3(0.7, 0.85, 1.0) * 0.15;
+	vec3 groundBounce = vec3(0.9, 0.75, 0.6) * 0.08;
+	vec3 hemi = mix(groundBounce, skyBounce, up);
+	return hemi * mate * occ;
+#else
+	return vec3(0.0);
+#endif
+}
+
 // O(1): Normal calculation for lighting.
 // hitPos: hit position
 vec3 getNorm(vec3 hitPos){ // Normal calculation for lighting
@@ -497,10 +510,14 @@ vec3 getLight(vec3 hitPos, vec3 rd, vec3 mate, vec3 normals){
 	
 	// Ambient fill can mask SSS backscatter; reduce it for strong subsurface materials.
 	float ambientStrength = mix(0.1, 0.03, clamp(subsurface, 0.0, 1.0));
+#if RM_ENABLE_GI
+	ambientStrength *= 0.5;
+#endif
 	vec3 ambient = vec3(ambientStrength) * mate * occ;
 	
 	float lightIntensity = 0.28;  // Main light intensity
 	vec3 col = (diffuse + specular) * lightIntensity * shadowColor + ambient;
+	col += getGlobalIllumination(normals, mate, occ);
 	
 	// Subsurface scattering: light penetrating and scattering inside the material
 #if RM_ENABLE_SSS

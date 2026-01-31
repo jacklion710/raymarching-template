@@ -13,6 +13,7 @@ Quick reference for all GLSL modules in the template.
 MAX_STEPS          // Maximum raymarch iterations (500)
 MIN_DIST           // Surface hit threshold (0.0001)
 RM_ENABLE_*        // Feature flags
+RM_ENABLE_GI       // Global illumination toggle
 
 // Uniforms
 uniform float iTime;
@@ -103,6 +104,7 @@ vec4 map(vec3 ro, vec3 rd);  // Raymarching loop
 ```glsl
 vec3 getNorm(vec3 hitPos);
 float getAmbientOcclusion(vec3 hitPos, vec3 normal);
+vec3 getGlobalIllumination(vec3 normals, vec3 mate, float occ);
 float getShadow(vec3 hitPos, vec3 rd, float k);
 vec3 getColoredShadow(vec3 hitPos, vec3 rd, float k);
 float getSimpleShadow(vec3 hitPos, vec3 rd, float k);

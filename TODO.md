@@ -9,7 +9,7 @@
 - [ ] Glean/glimmer effect for metallic materials
 - [ ] Interesting procedural background
 - [ ] Environment map background
-- [ ] Flag for global illumination
+- [x] Flag for global illumination
 
 ### SSS Improvements
 - [ ] Review SSS light absorption vs emission balance
@@ -19,7 +19,7 @@
 - [ ] Explore additional iridescence enhancements
 
 ### Global Illumination
-- [ ] Add a flag to toggle global illumination
+- [x] Add a flag to toggle global illumination
 - [ ] Ensure each material adheres to their unique rules for GI
 
 ## Medium Priority
@@ -54,3 +54,4 @@
 - [x] SSS light absorption fix with Beer-Lambert law
 - [x] Caustic colored shadows for transparent materials
 - [x] Feature flag system for toggling techniques
+- [x] Global illumination toggle (RM_ENABLE_GI)
