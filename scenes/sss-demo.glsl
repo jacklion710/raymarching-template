@@ -70,7 +70,7 @@ vec4 sssDemoScene(vec3 pos) {
 	// === 2) HOLLOW SHELL (JADE) ===
 	// Constant wall thickness demonstrates how thickness affects SSS intensity.
 	{
-		vec3 c = vec3(0.05, 0.19, 0.55);
+		vec3 c = vec3(0.05, 0.19, 0.85);
 		vec3 p = pos - c;
 
 		float outer = fSphere(p, 0.165);
