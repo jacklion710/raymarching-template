@@ -147,7 +147,7 @@ vec4 sssDemoScene(vec3 pos) {
 }
 
 // O(1): Scene-specific background
-vec3 sssDemoBackground(vec3 rd, vec3 ro, vec2 uv) {
+vec3 sssDemoBackground(vec2 skyUV, vec3 rd, vec3 ro) {
 	// Warm-toned sky for SSS readability.
 	vec3 base = rmDefaultBackground(rd, ro);
 	base = mix(base, vec3(0.95, 0.78, 0.65), 0.12);

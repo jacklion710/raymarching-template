@@ -33,7 +33,7 @@ void main(void) {
 	
 	// UV coords for screen-space effects (0 to 1)
 	vec2 uv = jit_in.texcoord * 0.5 + 0.5;
-	vec3 bgCol = getBackground(rd, ro, uv);
+	vec3 bgCol = getBackground(rd, ro);
 
 #ifdef DOF_ENABLED
 	// DoF configuration

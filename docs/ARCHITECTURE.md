@@ -22,6 +22,7 @@ raymarching-template/
 │
 ├── modules/                     # GLSL module library
 │   ├── anti-aliasing.glsl       # Anti-aliasing utilities
+│   ├── background.glsl          # Procedural sky/background utilities
 │   ├── camera.glsl              # Camera, DoF, shading entry point
 │   ├── color.glsl               # Color manipulation utilities
 │   ├── domain-repetition.glsl   # Space folding/repetition
@@ -48,18 +49,20 @@ The JXS file defines the include order, which is critical for GLSL compilation. 
 ```
 1. globals.glsl          # Constants, uniforms, feature flags
 2. noise.glsl            # No dependencies
-3. modifiers.glsl        # No dependencies
-4. rotate.glsl           # No dependencies
-5. hg_sdf.glsl           # SDF primitives library
-6. sdf.glsl              # Custom SDF primitives
-7. materials.glsl        # Material struct (depends on globals)
-8. fog.glsl              # Fog utilities
-9. domain-repetition.glsl # Domain operations
-10. lighting.glsl        # Lighting (depends on materials, sdf)
-11. color.glsl           # Color utilities
-12. camera.glsl          # Camera, shading (depends on lighting)
-13. post.glsl            # Post-processing
-14. marching-engine.glsl # Scene, raymarcher (depends on all above)
+3. noise.glsl            # No dependencies
+4. background.glsl       # Background helpers (depends on globals)
+5. modifiers.glsl        # No dependencies
+6. rotate.glsl           # No dependencies
+7. hg_sdf.glsl           # SDF primitives library
+8. sdf.glsl              # Custom SDF primitives
+9. materials.glsl        # Material struct (depends on globals)
+10. fog.glsl             # Fog utilities
+11. domain-repetition.glsl # Domain operations
+12. lighting.glsl        # Lighting (depends on materials, sdf)
+13. color.glsl           # Color utilities
+14. camera.glsl          # Camera, shading (depends on lighting)
+15. post.glsl            # Post-processing
+16. marching-engine.glsl # Scene, raymarcher (depends on all above)
 ```
 
 ## Data Flow

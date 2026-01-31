@@ -76,6 +76,20 @@ Material matToon(vec3 color, float steps);
 
 ---
 
+### background.glsl
+
+**Purpose:** Procedural sky/background utilities and sky-space mapping.
+
+**Key exports:**
+```glsl
+vec2 rmSkyUV(vec3 rd);                 // sky UV derived from view direction
+vec3 rmDefaultBackground(vec3 rd, vec3 ro); // default sky + clouds
+```
+
+**Dependencies:** globals.glsl
+
+---
+
 ### marching-engine.glsl
 
 **Purpose:** Scene composition and raymarching loop.
@@ -90,6 +104,9 @@ SceneResult sceneSmin(SceneResult a, SceneResult b, float k);
 
 vec4 getDist(vec3 pos);  // Scene SDF - EDIT THIS FOR YOUR SCENE
 vec4 map(vec3 ro, vec3 rd);  // Raymarching loop
+
+// Background (sky-space by default)
+vec3 getBackground(vec3 rd, vec3 ro);
 ```
 
 **Dependencies:** All SDF modules, materials.glsl

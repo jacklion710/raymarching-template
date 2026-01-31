@@ -28,9 +28,11 @@ vec4 showcaseScene(vec3 pos);
 vec4 causticScene(vec3 pos);
 vec4 sssDemoScene(vec3 pos);
 
-vec3 showcaseBackground(vec3 rd, vec3 ro, vec2 uv);
-vec3 causticBackground(vec3 rd, vec3 ro, vec2 uv);
-vec3 sssDemoBackground(vec3 rd, vec3 ro, vec2 uv);
+// Scene background forward declarations
+// Backgrounds are evaluated in "sky UV" derived from the view ray direction.
+vec3 showcaseBackground(vec2 skyUV, vec3 rd, vec3 ro);
+vec3 causticBackground(vec2 skyUV, vec3 rd, vec3 ro);
+vec3 sssDemoBackground(vec2 skyUV, vec3 rd, vec3 ro);
 
 // O(1): Get the distance bound to the nearest surface in the scene.
 // pos: world-space position being sampled
@@ -46,13 +48,15 @@ vec4 getDist(vec3 pos) {
 }
 
 // Scene-specific background selection (used for fog/reflections/refraction).
-vec3 getBackground(vec3 rd, vec3 ro, vec2 uv) {
+// NOTE: Backgrounds are intended to be authored in sky-space (not screen-space).
+vec3 getBackground(vec3 rd, vec3 ro) {
+	vec2 skyUV = rmSkyUV(rd);
 #if RM_ACTIVE_SCENE == SCENE_SHOWCASE
-	return showcaseBackground(rd, ro, uv);
+	return showcaseBackground(skyUV, rd, ro);
 #elif RM_ACTIVE_SCENE == SCENE_CAUSTICS
-	return causticBackground(rd, ro, uv);
+	return causticBackground(skyUV, rd, ro);
 #elif RM_ACTIVE_SCENE == SCENE_SSS_DEMO
-	return sssDemoBackground(rd, ro, uv);
+	return sssDemoBackground(skyUV, rd, ro);
 #endif
 }
 

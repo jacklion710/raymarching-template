@@ -239,7 +239,7 @@ vec4 causticScene(vec3 pos) {
 }
 
 // O(1): Scene-specific background
-vec3 causticBackground(vec3 rd, vec3 ro, vec2 uv) {
+vec3 causticBackground(vec2 skyUV, vec3 rd, vec3 ro) {
 	// Scene backgrounds should read as "sky": evaluate in ray-direction space (rd),
 	// not in screen space (uv). This ensures the background sits behind geometry
 	// and rotates naturally with the camera.
@@ -249,7 +249,7 @@ vec3 causticBackground(vec3 rd, vec3 ro, vec2 uv) {
 
 	// Re-introduce the geometric caustics pattern, but mapped onto the sky dome.
 	// Using sky UV keeps the pattern stable in world space instead of overlaying the screen.
-	vec2 suv = rmSkyUV(rd);
+	vec2 suv = skyUV;
 
 	// Fade pattern out near the horizon and below it.
 	float aboveHorizon = smoothstep(0.02, 0.10, rd.y);

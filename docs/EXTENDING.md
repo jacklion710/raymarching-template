@@ -10,7 +10,8 @@ This guide covers common extension tasks with step-by-step instructions.
 4. [Adding a New Light](#adding-a-new-light)
 5. [Creating a New Feature Flag](#creating-a-new-feature-flag)
 6. [Adding Post-Processing Effects](#adding-post-processing-effects)
-7. [Common Pitfalls](#common-pitfalls)
+7. [Adding or Customizing a Background (Sky)](#adding-or-customizing-a-background-sky)
+8. [Common Pitfalls](#common-pitfalls)
 
 ---
 
@@ -286,6 +287,56 @@ vec2 caOffset = (uv - 0.5) * 0.002;
 // Would need to re-render or sample texture - simplified version:
 col.r *= 1.0 + length(uv - 0.5) * 0.05;
 col.b *= 1.0 - length(uv - 0.5) * 0.05;
+```
+
+---
+
+## Adding or Customizing a Background (Sky)
+
+Backgrounds are scene-specific and are used for:
+- **Ray misses** (when the ray doesn’t hit any geometry)
+- **Fog blending**
+- **Reflections/refractions** fallback sampling
+
+### Background authoring rule (important)
+
+Backgrounds should be authored in **sky space** (derived from the view ray direction `rd`), not in screen space.
+
+This avoids two common problems:
+- The background looks like a **2D overlay** across the screen
+- The background **doesn’t rotate** with the camera
+
+### How it works in this template
+
+- The engine computes `skyUV = rmSkyUV(rd)` for you.
+- Each scene provides a background function with this signature:
+
+```glsl
+vec3 mySceneBackground(vec2 skyUV, vec3 rd, vec3 ro);
+```
+
+So you can “slot in” your pattern using `skyUV` without thinking about camera rotation.
+
+### Example: simple gradient sky
+
+```glsl
+vec3 mySceneBackground(vec2 skyUV, vec3 rd, vec3 ro) {
+    // skyUV.y is roughly horizon→zenith
+    float t = clamp(skyUV.y, 0.0, 1.0);
+    vec3 horizon = vec3(0.9, 0.9, 0.95);
+    vec3 zenith = vec3(0.25, 0.45, 0.75);
+    return mix(horizon, zenith, t);
+}
+```
+
+### Example: starting from the default sky
+
+```glsl
+vec3 mySceneBackground(vec2 skyUV, vec3 rd, vec3 ro) {
+    vec3 base = rmDefaultBackground(rd, ro);
+    // Add subtle tint
+    return mix(base, vec3(1.0, 0.85, 0.7), 0.1);
+}
 ```
 
 ---

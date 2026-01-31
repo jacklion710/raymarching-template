@@ -318,8 +318,8 @@ vec4 showcaseScene(vec3 pos){
 }
 
 // O(1): Scene-specific background
-vec3 showcaseBackground(vec3 rd, vec3 ro, vec2 uv) {
-	// Sky-like procedural background (world-space, follows camera rotation).
+vec3 showcaseBackground(vec2 skyUV, vec3 rd, vec3 ro) {
+	// Backgrounds are authored in sky space (skyUV derived from rd).
 	return rmDefaultBackground(rd, ro);
 }
 
