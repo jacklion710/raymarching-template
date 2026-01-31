@@ -20,6 +20,7 @@ All flags are defined in `globals.glsl`:
 #define RM_ENABLE_SPOTLIGHT 1
 #define RM_ENABLE_AMBIENT_OCCLUSION 1
 #define RM_ENABLE_CAUSTIC_SHADOWS 1
+#define RM_ENABLE_ENV_MAP 0
 #define RM_ENABLE_GI 0
 ```
 
@@ -161,6 +162,20 @@ All flags are defined in `globals.glsl`:
 
 ---
 
+### RM_ENABLE_ENV_MAP
+
+**Controls:** Directional environment background for reflections
+
+**Affects:**
+- Reflection fallback in `getFirstReflection()` (lighting.glsl)
+- Uses scene background as a sky/environment map
+
+**Performance cost:** Low
+
+**When to disable:** If you want flat background reflections (faster but less accurate)
+
+---
+
 ### RM_ENABLE_GI
 
 **Controls:** Cheap hemispherical global illumination bounce
@@ -186,6 +201,7 @@ All flags are defined in `globals.glsl`:
 #define RM_ENABLE_SPOTLIGHT 1
 #define RM_ENABLE_AMBIENT_OCCLUSION 1
 #define RM_ENABLE_CAUSTIC_SHADOWS 1
+#define RM_ENABLE_ENV_MAP 0
 #define RM_ENABLE_GI 0
 ```
 
@@ -200,6 +216,7 @@ All flags are defined in `globals.glsl`:
 #define RM_ENABLE_SPOTLIGHT 1
 #define RM_ENABLE_AMBIENT_OCCLUSION 1
 #define RM_ENABLE_CAUSTIC_SHADOWS 0  // Disable expensive caustics
+#define RM_ENABLE_ENV_MAP 0
 #define RM_ENABLE_GI 0
 ```
 
@@ -214,6 +231,7 @@ All flags are defined in `globals.glsl`:
 #define RM_ENABLE_SPOTLIGHT 0        // Single light only
 #define RM_ENABLE_AMBIENT_OCCLUSION 0
 #define RM_ENABLE_CAUSTIC_SHADOWS 0
+#define RM_ENABLE_ENV_MAP 0
 #define RM_ENABLE_GI 0
 ```
 
@@ -228,6 +246,7 @@ All flags are defined in `globals.glsl`:
 #define RM_ENABLE_SPOTLIGHT 0
 #define RM_ENABLE_AMBIENT_OCCLUSION 0
 #define RM_ENABLE_CAUSTIC_SHADOWS 0
+#define RM_ENABLE_ENV_MAP 0
 #define RM_ENABLE_GI 0
 ```
 

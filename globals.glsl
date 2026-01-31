@@ -5,13 +5,14 @@
 #define RM_GLOBALS_GLSL
 
 // Scene selection - change this to switch between scenes
-// Available scenes: SCENE_SHOWCASE, SCENE_CAUSTICS, SCENE_SSS_DEMO
+// Available scenes: SCENE_SHOWCASE, SCENE_CAUSTICS, SCENE_SSS_DEMO, SCENE_ENV_MAP
 #define SCENE_SHOWCASE 0
 #define SCENE_CAUSTICS 1
 #define SCENE_SSS_DEMO 2
+#define SCENE_ENV_MAP 3
 
 #ifndef RM_ACTIVE_SCENE
-#define RM_ACTIVE_SCENE SCENE_CAUSTICS
+#define RM_ACTIVE_SCENE SCENE_ENV_MAP
 #endif
 
 // Raymarch settings
@@ -58,6 +59,10 @@
 
 #ifndef RM_ENABLE_CAUSTIC_SHADOWS
 #define RM_ENABLE_CAUSTIC_SHADOWS 1
+#endif
+
+#ifndef RM_ENABLE_ENV_MAP
+#define RM_ENABLE_ENV_MAP 1
 #endif
 
 #ifndef RM_ENABLE_GI

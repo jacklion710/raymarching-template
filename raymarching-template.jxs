@@ -43,6 +43,7 @@
 <include source="marching-engine.glsl" program="fp" />
 <include source="showcase.glsl" program="fp" />
 <include source="caustics.glsl" program="fp" />
+<include source="env-map-demo.glsl" program="fp" />
 <include source="sss-demo.glsl" program="fp" />
 
 <program name="vp" type="vertex" source="raymarching-template.vp.glsl" />

@@ -61,6 +61,7 @@ Toggle rendering techniques in `globals.glsl`:
 #define RM_ENABLE_SPOTLIGHT 1        // Spot/point lights
 #define RM_ENABLE_AMBIENT_OCCLUSION 1
 #define RM_ENABLE_CAUSTIC_SHADOWS 1  // Colored shadows (expensive)
+#define RM_ENABLE_ENV_MAP 0          // Environment map for reflections
 #define RM_ENABLE_GI 0               // Cheap hemispherical GI
 ```
 

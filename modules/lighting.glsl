@@ -11,6 +11,10 @@ vec4 map(vec3 ro, vec3 rd);
 vec3 showcaseSceneLights(vec3 hitPos, vec3 normals, vec3 rd, vec3 mate);
 vec3 causticSceneLights(vec3 hitPos, vec3 normals, vec3 rd, vec3 mate);
 vec3 sssDemoSceneLights(vec3 hitPos, vec3 normals, vec3 rd, vec3 mate);
+vec3 envMapSceneLights(vec3 hitPos, vec3 normals, vec3 rd, vec3 mate);
+
+// Scene-specific background dispatcher (defined in marching-engine.glsl)
+vec3 getBackground(vec3 rd, vec3 ro);
 
 // Scene lights dispatcher
 // Scene selection controlled by RM_ACTIVE_SCENE in globals.glsl
@@ -25,6 +29,8 @@ vec3 getSceneLights(vec3 hitPos, vec3 normals, vec3 rd, vec3 mate) {
 	return causticSceneLights(hitPos, normals, rd, mate);
 #elif RM_ACTIVE_SCENE == SCENE_SSS_DEMO
 	return sssDemoSceneLights(hitPos, normals, rd, mate);
+#elif RM_ACTIVE_SCENE == SCENE_ENV_MAP
+	return envMapSceneLights(hitPos, normals, rd, mate);
 #endif
 }
 
@@ -623,7 +629,11 @@ vec3 getFirstReflection(vec3 ro, vec3 rd, vec3 bgCol){
 
 	// Color the scene based on the distance to the object
 	if (dist > farClip){
+	#if RM_ENABLE_ENV_MAP
+		return getBackground(rd, ro);
+	#else
 		return bgCol;
+	#endif
 	} else {
 		vec3 hitPos = ro + rd * dist;
 		// Save emission before getLight overwrites gMaterial

@@ -9,12 +9,12 @@
 - [ ] Glean/glimmer effect 
 - [ ] Environment map background
 - [ ] Stagger control for emissive flickering (currently all are in sync)
+- [ ] See if you can create a reference and click to go to a section of markdown from code
 
 ### Iridescence
 - [ ] Explore additional iridescence enhancements
 
 ### Global Illumination
-- [x] Add a flag to toggle global illumination
 - [ ] Ensure each material adheres to their unique rules for GI
 
 ## Medium Priority

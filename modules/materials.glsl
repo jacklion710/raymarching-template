@@ -39,6 +39,8 @@ vec3 getIridescentColor(float viewAngle, vec3 baseColor) {
 #define NUM_EMISSIVES 6
 #elif RM_ACTIVE_SCENE == SCENE_CAUSTICS
 #define NUM_EMISSIVES 0  // Caustics scene has no emissive objects
+#elif RM_ACTIVE_SCENE == SCENE_ENV_MAP
+#define NUM_EMISSIVES 0  // Env map scene uses explicit lights
 #else
 #define NUM_EMISSIVES 0
 #endif
