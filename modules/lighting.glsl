@@ -10,6 +10,7 @@ vec4 map(vec3 ro, vec3 rd);
 // Each scene file defines its own lighting setup
 vec3 showcaseSceneLights(vec3 hitPos, vec3 normals, vec3 rd, vec3 mate);
 vec3 causticSceneLights(vec3 hitPos, vec3 normals, vec3 rd, vec3 mate);
+vec3 sssDemoSceneLights(vec3 hitPos, vec3 normals, vec3 rd, vec3 mate);
 
 // Scene lights dispatcher
 // Scene selection controlled by RM_ACTIVE_SCENE in globals.glsl
@@ -22,6 +23,8 @@ vec3 getSceneLights(vec3 hitPos, vec3 normals, vec3 rd, vec3 mate) {
 	return showcaseSceneLights(hitPos, normals, rd, mate);
 #elif RM_ACTIVE_SCENE == SCENE_CAUSTICS
 	return causticSceneLights(hitPos, normals, rd, mate);
+#elif RM_ACTIVE_SCENE == SCENE_SSS_DEMO
+	return sssDemoSceneLights(hitPos, normals, rd, mate);
 #endif
 }
 
@@ -155,7 +158,7 @@ vec3 getColoredShadow(vec3 hitPos, vec3 rd, float k){
 			}
 			
 			// SSS objects are NOT transparent - they scatter light internally
-			// They cast soft-edged shadows with subtle color bleeding at edges only
+			// They cast soft-edged, tinted shadows (semi-opaque transmission).
 			if (hitSubsurface > 0.3) {
 				// Sample through the SSS object to estimate thickness
 				float sssThickness = 0.0;
@@ -166,18 +169,16 @@ vec3 getColoredShadow(vec3 hitPos, vec3 rd, float k){
 					sssThickness += 0.02;
 					sssPos += rd * 0.02;
 				}
-				
-				// SSS materials block most light - they're not transparent
-				// Only thin edges allow some scattered light through
-				float edgeFactor = 1.0 - clamp(sssThickness * 5.0, 0.0, 1.0);
-				
-				// Subtle color tint only at very thin edges (light scattering around)
-				vec3 edgeTint = mix(vec3(1.0), hitSubsurfaceCol, edgeFactor * 0.3);
-				shadowColor *= edgeTint;
-				
-				// Strong shadow - SSS materials are mostly opaque
-				// Thicker areas cast darker shadows
-				sha *= mix(0.05, 0.3, edgeFactor);
+
+				// Thickness-driven transmission and tint.
+				// Thin areas transmit more light; thicker areas transmit less and tint more.
+				float trans = exp(-sssThickness * 6.0);
+				vec3 absorptionCoeff = vec3(1.0) - hitSubsurfaceCol;
+				vec3 tint = exp(-absorptionCoeff * sssThickness * 5.0);
+
+				shadowColor *= mix(vec3(1.0), tint, 0.9);
+				sha *= mix(0.12, 0.85, trans);
+
 				h += sssThickness + 0.02;
 				continue;
 			}
@@ -241,6 +242,8 @@ vec3 getPointLight(vec3 hitPos, vec3 lightPos, vec3 normals, vec3 rd, vec3 refRd
 	
 	float metallic = gMaterial.metallic;
 	float roughness = gMaterial.roughness;
+	float subsurface = gMaterial.subsurface;
+	vec3 subsurfaceCol = gMaterial.subsurfaceCol;
 	
 	vec3 lightDir = normalize(hitPos - lightPos);
 	vec3 halfVec = normalize(-lightDir - rd);
@@ -263,8 +266,42 @@ vec3 getPointLight(vec3 hitPos, vec3 lightPos, vec3 normals, vec3 rd, vec3 refRd
 #endif
 	float dist = length(hitPos - lightPos);
 	float att = 1. / (dist * dist);
+	
+	vec3 radiance = shadowColor * att * lightCol;
+	vec3 col = (dif * mate + spe * specColor) * radiance;
 
-	return (dif * mate + spe * specColor) * shadowColor * att * lightCol;
+	// Subsurface scattering for additional lights (point/spot).
+	// Uses the same model as the main light, scaled by this light's radiance.
+#if RM_ENABLE_SSS
+	if (subsurface > 0.0) {
+		float thickness = 0.0;
+		vec3 sampleDir = -normals;
+		for (int i = 1; i <= 3; i++) {
+			float sampleDist = 0.02 * float(i);
+			float d = getDist(hitPos + sampleDir * sampleDist).w;
+			thickness += max(0.0, -d);
+		}
+		thickness = clamp(thickness * 4.0, 0.0, 1.0);
+
+		vec3 absorptionCoeff = vec3(1.0) - subsurfaceCol;
+		vec3 absorption = exp(-absorptionCoeff * thickness * 4.0);
+
+		float surfaceReduction = mix(1.0, 0.3, subsurface);
+		col *= surfaceReduction * absorption;
+
+		float NdotL_back = max(dot(lightDir, normals), 0.0);
+		float backlit = NdotL_back * pow(1.0 - thickness, 2.0);
+		float wrap = max(0.0, (dot(-lightDir, normals) + 0.5) / 1.5);
+
+		float NdotV = max(dot(normals, -rd), 0.0);
+		float rimScatter = pow(1.0 - NdotV, 3.0) * 0.3;
+
+		float scatter = (wrap * 0.5 + backlit * 1.5 + rimScatter) * (1.0 - thickness * 0.7);
+		col += subsurfaceCol * scatter * subsurface * radiance;
+	}
+#endif
+
+	return col;
 }
 
 // O(1): Spotlight calculation (cone-shaped directional light)
@@ -279,6 +316,8 @@ vec3 getPointLight(vec3 hitPos, vec3 lightPos, vec3 normals, vec3 rd, vec3 refRd
 vec3 getSpotLight(vec3 hitPos, vec3 spotPos, vec3 spotDir, vec3 normals, vec3 rd, vec3 spotCol, float innerAngle, float outerAngle) {
 	float metallic = gMaterial.metallic;
 	float roughness = gMaterial.roughness;
+	float subsurface = gMaterial.subsurface;
+	vec3 subsurfaceCol = gMaterial.subsurfaceCol;
 	vec3 mate = gMaterial.albedo;
 	
 	vec3 toLight = spotPos - hitPos;
@@ -315,8 +354,42 @@ vec3 getSpotLight(vec3 hitPos, vec3 spotPos, vec3 spotDir, vec3 normals, vec3 rd
 #else
 	vec3 shadowColor = vec3(getSimpleShadow(hitPos, lightDir, 8.0));
 #endif
-	
-	return (diffuse + specular) * spotAtt * distAtt * shadowColor * spotCol;
+
+	vec3 radiance = spotAtt * distAtt * shadowColor * spotCol;
+	vec3 col = (diffuse + specular) * radiance;
+
+	// Subsurface scattering for spotlight contribution.
+#if RM_ENABLE_SSS
+	if (subsurface > 0.0) {
+		float thickness = 0.0;
+		vec3 sampleDir = -normals;
+		for (int i = 1; i <= 3; i++) {
+			float sampleDist = 0.02 * float(i);
+			float d = getDist(hitPos + sampleDir * sampleDist).w;
+			thickness += max(0.0, -d);
+		}
+		thickness = clamp(thickness * 4.0, 0.0, 1.0);
+
+		vec3 absorptionCoeff = vec3(1.0) - subsurfaceCol;
+		vec3 absorption = exp(-absorptionCoeff * thickness * 4.0);
+
+		float surfaceReduction = mix(1.0, 0.3, subsurface);
+		col *= surfaceReduction * absorption;
+
+		vec3 lightToHitDir = -lightDir;
+		float NdotL_back = max(dot(lightToHitDir, normals), 0.0);
+		float backlit = NdotL_back * pow(1.0 - thickness, 2.0);
+		float wrap = max(0.0, (dot(-lightToHitDir, normals) + 0.5) / 1.5);
+
+		float NdotV = max(dot(normals, -rd), 0.0);
+		float rimScatter = pow(1.0 - NdotV, 3.0) * 0.3;
+
+		float scatter = (wrap * 0.5 + backlit * 1.5 + rimScatter) * (1.0 - thickness * 0.7);
+		col += subsurfaceCol * scatter * subsurface * radiance;
+	}
+#endif
+
+	return col;
 }
 
 // O(1): Sky light calculation.
@@ -422,7 +495,9 @@ vec3 getLight(vec3 hitPos, vec3 rd, vec3 mate, vec3 normals){
 	// Emissive objects don't receive shadows (they glow uniformly)
 	shadowColor = mix(shadowColor, vec3(1.0), emissionStrength);
 	
-	vec3 ambient = vec3(0.1) * mate * occ;  // Ambient for visibility
+	// Ambient fill can mask SSS backscatter; reduce it for strong subsurface materials.
+	float ambientStrength = mix(0.1, 0.03, clamp(subsurface, 0.0, 1.0));
+	vec3 ambient = vec3(ambientStrength) * mate * occ;
 	
 	float lightIntensity = 0.28;  // Main light intensity
 	vec3 col = (diffuse + specular) * lightIntensity * shadowColor + ambient;

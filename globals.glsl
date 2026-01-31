@@ -5,12 +5,13 @@
 #define RM_GLOBALS_GLSL
 
 // Scene selection - change this to switch between scenes
-// Available scenes: SCENE_SHOWCASE, SCENE_CAUSTICS
+// Available scenes: SCENE_SHOWCASE, SCENE_CAUSTICS, SCENE_SSS_DEMO
 #define SCENE_SHOWCASE 0
 #define SCENE_CAUSTICS 1
+#define SCENE_SSS_DEMO 2
 
 #ifndef RM_ACTIVE_SCENE
-#define RM_ACTIVE_SCENE SCENE_CAUSTICS
+#define RM_ACTIVE_SCENE SCENE_SSS_DEMO
 #endif
 
 // Raymarch settings

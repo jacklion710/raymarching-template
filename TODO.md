@@ -5,6 +5,7 @@
 ### Materials & Effects
 - [ ] Anti-aliasing implementation
 - [ ] Denoising pass
+- [ ] Multipass (Max/Jitter slab chain): render raymarch pass to texture (pack depth/aux), then post passes for bloom + FXAA + SSS + optional temporal accumulation; [watch this](https://www.youtube.com/watch?v=9O80hGMtW6Q)
 - [ ] Glean/glimmer effect for metallic materials
 - [ ] Interesting procedural background
 - [ ] Environment map background
@@ -17,12 +18,17 @@
 ### Iridescence
 - [ ] Explore additional iridescence enhancements
 
+### Global Illumination
+- [ ] Add a flag to toggle global illumination
+- [ ] Ensure each material adheres to their unique rules for GI
+
 ## Medium Priority
 
 ### Visual Polish
 - [ ] Palette function for stylized color schemes
 - [ ] "Hetti style" lighting presets
 - [ ] Cool hg_sdf modifier showcases
+- [ ] Flickering point and cone lights.
 
 ### Performance
 - [ ] Profile caustic shadows on various GPUs

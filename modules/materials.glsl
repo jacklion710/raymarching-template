@@ -224,6 +224,26 @@ Material matMarble() {
 	return Material(vec3(0.95, 0.93, 0.9), 0.0, 0.2, vec3(0.0), 0.0, 0.7, vec3(1.0, 0.9, 0.7), 0.0, 1.0, 0.0);
 }
 
+// Gummy bear / gelatin-like SSS material.
+// Saturated subsurface color with a smoother surface to catch highlights.
+Material matGummyBear(vec3 color) {
+	vec3 base = clamp(color, 0.0, 1.0);
+	// Candy gels tend to scatter red/orange light much more strongly.
+	vec3 sssCol = clamp(base * vec3(1.35, 0.55, 0.45) + vec3(0.08, 0.01, 0.00), 0.0, 1.0);
+	return Material(
+		mix(base, vec3(1.0), 0.1), // slightly lifted albedo for candy look
+		0.0,
+		0.10,                      // glossier surface reads "gel"
+		vec3(0.0),
+		0.0,
+		2.4,                       // strong SSS (boosted)
+		sssCol,
+		0.0,                       // keep opaque in this template's model (SSS does the "gummy" feel)
+		1.0,
+		0.0
+	);
+}
+
 // O(1): Transparent glass material setup.
 // Warm amber tint like antique bottle glass
 Material matGlass() {

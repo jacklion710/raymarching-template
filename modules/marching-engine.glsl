@@ -26,6 +26,7 @@ SceneResult sceneSmin(SceneResult a, SceneResult b, float k) {
 // Each scene file (e.g., scenes/showcase.glsl) defines its own scene function
 vec4 showcaseScene(vec3 pos);
 vec4 causticScene(vec3 pos);
+vec4 sssDemoScene(vec3 pos);
 
 // O(1): Get the distance bound to the nearest surface in the scene.
 // pos: world-space position being sampled
@@ -35,6 +36,8 @@ vec4 getDist(vec3 pos) {
 	return showcaseScene(pos);
 #elif RM_ACTIVE_SCENE == SCENE_CAUSTICS
 	return causticScene(pos);
+#elif RM_ACTIVE_SCENE == SCENE_SSS_DEMO
+	return sssDemoScene(pos);
 #endif
 }
 
