@@ -89,7 +89,13 @@ vec4 envMapScene(vec3 pos) {
 	vec3 beadPos = pos - vec3(0.55, 0.12, 0.45);
 	SceneResult bead = sceneResult(
 		fSphere(beadPos, 0.1),
-		matBeetleShell(vec3(0.15, 0.25, 0.4))
+		Material(
+			vec3(0.15, 0.25, 0.4),
+			0.6, 0.38,   // metallic, roughness (softer, more photoreal shadow)
+			vec3(0.0),
+			0.7, 0.0, vec3(1.0),
+			0.0, 1.0, 0.0
+		)
 	);
 	scene = sceneMin(scene, bead);
 #endif

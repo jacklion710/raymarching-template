@@ -169,6 +169,7 @@ All flags are defined in `globals.glsl`:
 **Affects:**
 - Reflection fallback in `getFirstReflection()` (lighting.glsl)
 - Uses scene background as a sky/environment map
+ - Changes reflection misses from flat bg to directional env sampling
 
 **Performance cost:** Low
 

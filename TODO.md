@@ -7,7 +7,6 @@
 - [ ] Denoising pass
 - [ ] Multipass (Max/Jitter slab chain): render raymarch pass to texture (pack depth/aux), then post passes for bloom + FXAA + SSS + optional temporal accumulation; [watch this](https://www.youtube.com/watch?v=9O80hGMtW6Q)
 - [ ] Glean/glimmer effect 
-- [ ] Environment map background
 - [ ] Stagger control for emissive flickering (currently all are in sync)
 - [ ] See if you can create a reference and click to go to a section of markdown from code
 
@@ -52,3 +51,4 @@
 - [x] Global illumination toggle (RM_ENABLE_GI)
 for metallic materials
 - [x] Interesting procedural background
+- [x] Environment map background

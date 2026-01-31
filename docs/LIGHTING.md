@@ -164,6 +164,8 @@ float shadowSoftness = mix(16.0, 4.0, roughness);
 // Rough surfaces: soft shadows (k=4)
 ```
 
+**Note on iridescence:** Iridescence is a surface shading effect only; it should not make shadows sharper by itself. For photoreal looks, use material roughness (and light size) to control shadow softness.
+
 ## Material-Specific Lighting
 
 ### Standard PBR (Plastic, Metal, Rubber)
