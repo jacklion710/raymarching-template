@@ -74,16 +74,19 @@ float getSimpleShadow(vec3 hitPos, vec3 rd, float k){
 				h += 0.15;
 				continue;
 			}
+			// Transparent materials let some light through
 			if (gMaterial.transmission > 0.5) {
 				sha *= 0.7;
 				h += 0.1;
 				continue;
 			}
+			// SSS materials are mostly opaque - only slight softening
 			if (gMaterial.subsurface > 0.5) {
-				sha *= 0.5;
+				sha *= 0.15;
 				h += 0.08;
 				continue;
 			}
+			// Opaque objects (including iridescent) cast full shadows
 			return 0.0;
 		}
 		if (d < 0.1 && hitEmission > 0.5) {
@@ -151,7 +154,8 @@ vec3 getColoredShadow(vec3 hitPos, vec3 rd, float k){
 				continue;
 			}
 			
-			// SSS objects cast colored, soft-edged shadows with depth-based bleeding
+			// SSS objects are NOT transparent - they scatter light internally
+			// They cast soft-edged shadows with subtle color bleeding at edges only
 			if (hitSubsurface > 0.3) {
 				// Sample through the SSS object to estimate thickness
 				float sssThickness = 0.0;
@@ -163,26 +167,37 @@ vec3 getColoredShadow(vec3 hitPos, vec3 rd, float k){
 					sssPos += rd * 0.02;
 				}
 				
-				// Strong color bleeding - the subsurface color dominates
-				vec3 absorptionCoeff = vec3(1.0) - hitSubsurfaceCol;
-				vec3 sssTint = exp(-absorptionCoeff * sssThickness * 12.0);
-				shadowColor *= hitSubsurfaceCol * sssTint * 1.2;
+				// SSS materials block most light - they're not transparent
+				// Only thin edges allow some scattered light through
+				float edgeFactor = 1.0 - clamp(sssThickness * 5.0, 0.0, 1.0);
 				
-				// Very soft shadow - SSS materials let a lot of light through
-				sha *= mix(0.5, 0.85, clamp(sssThickness * 8.0, 0.0, 1.0));
+				// Subtle color tint only at very thin edges (light scattering around)
+				vec3 edgeTint = mix(vec3(1.0), hitSubsurfaceCol, edgeFactor * 0.3);
+				shadowColor *= edgeTint;
+				
+				// Strong shadow - SSS materials are mostly opaque
+				// Thicker areas cast darker shadows
+				sha *= mix(0.05, 0.3, edgeFactor);
 				h += sssThickness + 0.02;
 				continue;
 			}
 			
-			// Iridescent objects cast rainbow caustic shadows
+			// Iridescent objects - check if they're also transparent
+			// Opaque iridescent materials (beetle shell, pearl) cast normal opaque shadows
+			// The rainbow effect is surface-only (thin-film interference), not transmitted
 			if (hitIridescence > 0.3) {
-				// Position and angle dependent rainbow
-				float phase = dot(samplePos, vec3(1.0, 0.5, 0.3)) * 12.0 + h * 3.0;
-				vec3 iriTint = 0.5 + 0.5 * cos(6.28318 * (phase + vec3(0.0, 0.33, 0.67)));
-				shadowColor *= mix(vec3(0.8), iriTint, hitIridescence * 0.7);
-				sha *= 0.6;
-				h += 0.08;
-				continue;
+				// Only cast rainbow caustics if the material is also transmissive
+				if (hitTransmission > 0.3) {
+					// Thin-film transmissive material (like soap bubble)
+					float phase = dot(samplePos, vec3(1.0, 0.5, 0.3)) * 12.0 + h * 3.0;
+					vec3 iriTint = 0.5 + 0.5 * cos(6.28318 * (phase + vec3(0.0, 0.33, 0.67)));
+					shadowColor *= mix(vec3(0.9), iriTint, hitIridescence * 0.5);
+					sha *= mix(1.0, 0.7, hitTransmission);
+					h += 0.08;
+					continue;
+				}
+				// Opaque iridescent material - full shadow, no color transmission
+				return vec3(0.0);
 			}
 			
 			// Opaque object - full shadow
@@ -492,7 +507,11 @@ vec3 getLight(vec3 hitPos, vec3 rd, vec3 mate, vec3 normals){
 			// Smoothly fade out when very close to emissive (on its surface)
 			float surfaceFade = smoothstep(emissiveRadius, emissiveRadius * 3.0, distToEmissive);
 			
-			col += emissiveDiffuse * emissiveAtt * surfaceFade * emissiveCol * mate * emissivePower;
+			// Shadow test - emissive light inside SSS objects should be blocked
+			// Use simple shadow (no caustics) since emissives are often inside objects
+			float emissiveShadow = getSimpleShadow(hitPos, emissiveDir, 8.0);
+			
+			col += emissiveDiffuse * emissiveAtt * surfaceFade * emissiveShadow * emissiveCol * mate * emissivePower;
 		}
 	}
 #endif
