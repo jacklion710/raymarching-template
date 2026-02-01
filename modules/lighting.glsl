@@ -12,6 +12,9 @@ vec3 showcaseSceneLights(vec3 hitPos, vec3 normals, vec3 rd, vec3 mate);
 vec3 causticSceneLights(vec3 hitPos, vec3 normals, vec3 rd, vec3 mate);
 vec3 sssDemoSceneLights(vec3 hitPos, vec3 normals, vec3 rd, vec3 mate);
 vec3 envMapSceneLights(vec3 hitPos, vec3 normals, vec3 rd, vec3 mate);
+vec3 hgSdfModifiersSceneLights(vec3 hitPos, vec3 normals, vec3 rd, vec3 mate);
+vec3 iridescenceShowcaseSceneLights(vec3 hitPos, vec3 normals, vec3 rd, vec3 mate);
+vec3 nightLightsSceneLights(vec3 hitPos, vec3 normals, vec3 rd, vec3 mate);
 
 // Scene-specific background dispatcher (defined in marching-engine.glsl)
 vec3 getBackground(vec3 rd, vec3 ro);
@@ -31,17 +34,53 @@ vec3 getSceneLights(vec3 hitPos, vec3 normals, vec3 rd, vec3 mate) {
 	return sssDemoSceneLights(hitPos, normals, rd, mate);
 #elif RM_ACTIVE_SCENE == SCENE_ENV_MAP
 	return envMapSceneLights(hitPos, normals, rd, mate);
+#elif RM_ACTIVE_SCENE == SCENE_HG_SDF_MODIFIERS
+	return hgSdfModifiersSceneLights(hitPos, normals, rd, mate);
+#elif RM_ACTIVE_SCENE == SCENE_IRIDESCENCE_SHOWCASE
+	return iridescenceShowcaseSceneLights(hitPos, normals, rd, mate);
+#elif RM_ACTIVE_SCENE == SCENE_NIGHT_LIGHTS
+	return nightLightsSceneLights(hitPos, normals, rd, mate);
 #endif
 }
 
 // Cheap hemispherical GI approximation (toggled by RM_ENABLE_GI).
+// Material-aware rules:
+// - Metals/transmissive surfaces get reduced diffuse GI
+// - SSS materials tint GI toward subsurface color
+// - Emissive and toon materials suppress GI
+// - Smooth (low roughness) surfaces get less diffuse GI
 vec3 getGlobalIllumination(vec3 normals, vec3 mate, float occ) {
 #if RM_ENABLE_GI
 	float up = clamp(normals.y * 0.5 + 0.5, 0.0, 1.0);
 	vec3 skyBounce = vec3(0.7, 0.85, 1.0) * 0.15;
 	vec3 groundBounce = vec3(0.9, 0.75, 0.6) * 0.08;
 	vec3 hemi = mix(groundBounce, skyBounce, up);
-	return hemi * mate * occ;
+	
+	float metallic = gMaterial.metallic;
+	float roughness = gMaterial.roughness;
+	float subsurface = clamp(gMaterial.subsurface, 0.0, 1.0);
+	float transmission = clamp(gMaterial.transmission, 0.0, 1.0);
+	float toonSteps = gMaterial.toonSteps;
+	float emissionStrength = clamp(length(gMaterial.emission) / 3.0, 0.0, 1.0);
+	
+	// Toon shading stays flat; emissive surfaces should not collect GI.
+	if (toonSteps > 0.0 || emissionStrength > 0.6) {
+		return vec3(0.0);
+	}
+	
+	vec3 giColor = mate;
+	if (subsurface > 0.0) {
+		giColor = mix(giColor, gMaterial.subsurfaceCol, subsurface);
+	}
+	
+	float giStrength = 1.0;
+	giStrength *= mix(1.0, 0.15, metallic);
+	giStrength *= mix(0.35, 1.0, roughness);
+	giStrength *= mix(1.0, 0.1, transmission);
+	giStrength *= mix(1.0, 0.6, subsurface);
+	giStrength *= (1.0 - emissionStrength);
+	
+	return hemi * giColor * occ * giStrength;
 #else
 	return vec3(0.0);
 #endif
@@ -622,8 +661,33 @@ vec3 getLight(vec3 hitPos, vec3 rd, vec3 mate, vec3 normals){
 	return col;
 }
 
+// O(n): Reflection-specific raymarching loop.
+// Starts from a tiny offset (not nearClip) so fine geometry details
+// like boolean difference cuts are visible in reflections.
+// ro: reflection ray origin (already offset from surface)
+// rd: reflection ray direction
+vec4 mapReflection(vec3 ro, vec3 rd) {
+	// Start very close to the origin so carved details aren't skipped.
+	float currDist = MIN_DIST * 8.0;
+	float dist = 0.0;
+	vec4 scene;
+	vec3 pos;
+	
+	for (int i = 0; i < MAX_STEPS; i++) {
+		pos = ro + rd * currDist;
+		scene = getDist(pos);
+		dist = scene.w;
+		currDist += dist;
+		if (abs(dist) < MIN_DIST || currDist > farClip) {
+			break;
+		}
+	}
+	return vec4(scene.rgb, currDist);
+}
+
 vec3 getFirstReflection(vec3 ro, vec3 rd, vec3 bgCol){
-	vec4 scene = map(ro, rd);
+	// Use reflection-specific march that doesn't skip close geometry.
+	vec4 scene = mapReflection(ro, rd);
 	vec3 material = scene.rgb;
 	float dist = scene.w;
 

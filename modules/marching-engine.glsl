@@ -28,6 +28,9 @@ vec4 showcaseScene(vec3 pos);
 vec4 causticScene(vec3 pos);
 vec4 sssDemoScene(vec3 pos);
 vec4 envMapScene(vec3 pos);
+vec4 hgSdfModifiersScene(vec3 pos);
+vec4 iridescenceShowcaseScene(vec3 pos);
+vec4 nightLightsScene(vec3 pos);
 
 // Scene background forward declarations
 // Backgrounds are evaluated in "sky UV" derived from the view ray direction.
@@ -35,6 +38,9 @@ vec3 showcaseBackground(vec2 skyUV, vec3 rd, vec3 ro);
 vec3 causticBackground(vec2 skyUV, vec3 rd, vec3 ro);
 vec3 sssDemoBackground(vec2 skyUV, vec3 rd, vec3 ro);
 vec3 envMapBackground(vec2 skyUV, vec3 rd, vec3 ro);
+vec3 hgSdfModifiersBackground(vec2 skyUV, vec3 rd, vec3 ro);
+vec3 iridescenceShowcaseBackground(vec2 skyUV, vec3 rd, vec3 ro);
+vec3 nightLightsBackground(vec2 skyUV, vec3 rd, vec3 ro);
 
 // O(1): Get the distance bound to the nearest surface in the scene.
 // pos: world-space position being sampled
@@ -48,6 +54,12 @@ vec4 getDist(vec3 pos) {
 	return sssDemoScene(pos);
 #elif RM_ACTIVE_SCENE == SCENE_ENV_MAP
 	return envMapScene(pos);
+#elif RM_ACTIVE_SCENE == SCENE_HG_SDF_MODIFIERS
+	return hgSdfModifiersScene(pos);
+#elif RM_ACTIVE_SCENE == SCENE_IRIDESCENCE_SHOWCASE
+	return iridescenceShowcaseScene(pos);
+#elif RM_ACTIVE_SCENE == SCENE_NIGHT_LIGHTS
+	return nightLightsScene(pos);
 #endif
 }
 
@@ -63,6 +75,12 @@ vec3 getBackground(vec3 rd, vec3 ro) {
 	return sssDemoBackground(skyUV, rd, ro);
 #elif RM_ACTIVE_SCENE == SCENE_ENV_MAP
 	return envMapBackground(skyUV, rd, ro);
+#elif RM_ACTIVE_SCENE == SCENE_HG_SDF_MODIFIERS
+	return hgSdfModifiersBackground(skyUV, rd, ro);
+#elif RM_ACTIVE_SCENE == SCENE_IRIDESCENCE_SHOWCASE
+	return iridescenceShowcaseBackground(skyUV, rd, ro);
+#elif RM_ACTIVE_SCENE == SCENE_NIGHT_LIGHTS
+	return nightLightsBackground(skyUV, rd, ro);
 #endif
 }
 

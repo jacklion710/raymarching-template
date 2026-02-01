@@ -7,22 +7,17 @@
 - [ ] Denoising pass
 - [ ] Multipass (Max/Jitter slab chain): render raymarch pass to texture (pack depth/aux), then post passes for bloom + FXAA + SSS + optional temporal accumulation; [watch this](https://www.youtube.com/watch?v=9O80hGMtW6Q)
 - [ ] Glean/glimmer effect 
-- [ ] Stagger control for emissive flickering (currently all are in sync) [check the showcase scene for flicker visibility]
+- [x] Stagger control for emissive flickering (currently all are in sync) [check the showcase scene for flicker visibility]
 - [ ] See if you can create a reference and click to go to a section of markdown from code
 
-### Iridescence
-- [ ] Explore additional iridescence enhancements
-
-### Global Illumination
-- [ ] Ensure each material adheres to their unique rules for GI
 
 ## Medium Priority
 
 ### Visual Polish
 - [ ] Palette function for stylized color schemes
 - [ ] "Hetti style" lighting presets
-- [ ] Cool hg_sdf modifier showcases
-- [ ] Flickering point and cone lights.
+- [x] Flickering point and cone lights
+- [x] Night lights showcase scene with moon
 
 ### Performance
 - [ ] Profile caustic shadows on various GPUs
@@ -52,3 +47,6 @@
 for metallic materials
 - [x] Interesting procedural background
 - [x] Environment map background
+- [x] Cool hg_sdf modifier showcases
+- [x] Ensure each material adheres to their unique rules for GI
+- [x] Explore additional iridescence enhancements and create a showcase scene

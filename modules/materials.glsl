@@ -21,16 +21,30 @@ Material gMaterial = Material(vec3(0.5), 0.0, 0.5, vec3(0.0), 0.0, 0.0, vec3(1.0
 // baseColor: the material's base albedo
 // Returns: color shifted through spectrum based on angle
 vec3 getIridescentColor(float viewAngle, vec3 baseColor) {
-	// Thin-film interference creates rainbow colors based on angle
-	// Using a spectral palette that shifts from blue -> green -> yellow -> red -> purple
-	float hue = fract(viewAngle * 2.0 + 0.5);  // Shift through hues based on angle
+	float ndv = clamp(viewAngle, 0.0, 1.0);
+	float edge = pow(1.0 - ndv, 1.35);
 	
-	// Convert hue to RGB (simplified HSV to RGB)
-	vec3 rainbow = 0.5 + 0.5 * cos(6.28318 * (hue + vec3(0.0, 0.33, 0.67)));
+	float roughness = clamp(gMaterial.roughness, 0.0, 1.0);
+	float metallic = clamp(gMaterial.metallic, 0.0, 1.0);
+	float transmission = clamp(gMaterial.transmission, 0.0, 1.0);
 	
-	// Blend with base color - iridescence is strongest at glancing angles
-	float strength = pow(1.0 - viewAngle, 2.0);  // Stronger at edges
-	return mix(baseColor, rainbow, strength * 0.8);
+	// Approximate thin-film interference with three wavelength bands.
+	float luma = clamp(dot(baseColor, vec3(0.3333)), 0.0, 1.0);
+	float thickness = mix(240.0, 980.0, luma);
+	thickness *= mix(0.9, 1.15, metallic);
+	thickness *= 1.0 + 0.18 * sin((ndv * 1.7 + luma * 0.9) * 6.28318);
+	
+	vec3 lambda = vec3(680.0, 530.0, 440.0);
+	vec3 phase = (6.28318 * thickness) / lambda;
+	
+	vec3 interference = 0.5 + 0.5 * cos(phase + vec3(0.0, 2.1, 4.2) + ndv * 2.4);
+	vec3 pearlescent = 0.5 + 0.5 * cos((phase * 0.65) + vec3(1.0, 3.0, 5.1) - ndv * 1.4);
+	vec3 film = mix(interference, pearlescent, 0.35 + 0.35 * metallic);
+	
+	float filmStrength = edge * mix(0.25, 1.0, 1.0 - roughness);
+	filmStrength = mix(filmStrength, filmStrength * 1.1, transmission);
+	
+	return mix(baseColor, film, filmStrength);
 }
 
 // Number of emissive light sources per scene
@@ -41,6 +55,8 @@ vec3 getIridescentColor(float viewAngle, vec3 baseColor) {
 #define NUM_EMISSIVES 0  // Caustics scene has no emissive objects
 #elif RM_ACTIVE_SCENE == SCENE_ENV_MAP
 #define NUM_EMISSIVES 0  // Env map scene uses explicit lights
+#elif RM_ACTIVE_SCENE == SCENE_NIGHT_LIGHTS
+#define NUM_EMISSIVES 5
 #else
 #define NUM_EMISSIVES 0
 #endif
@@ -80,6 +96,19 @@ vec4 getEmissiveSource(int index) {
 		// Spotlight position marker (dim reference)
 		return vec4(0.8, 0.5, -0.3, 0.02);
 	}
+#elif RM_ACTIVE_SCENE == SCENE_NIGHT_LIGHTS
+	// Night lights scene: ground-level lanterns and a hero orb
+	if (index == 0) {
+		return vec4(-0.75, 0.18, 0.4, 0.06);
+	} else if (index == 1) {
+		return vec4(-0.2, 0.22, 0.1, 0.05);
+	} else if (index == 2) {
+		return vec4(0.35, 0.2, 0.35, 0.05);
+	} else if (index == 3) {
+		return vec4(0.8, 0.18, 0.0, 0.06);
+	} else {
+		return vec4(0.0, 0.38, -0.45, 0.08);
+	}
 #else
 	// Default: no emissives
 	return vec4(0.0, -100.0, 0.0, 0.0);
@@ -91,8 +120,10 @@ vec4 getEmissiveSource(int index) {
 vec4 getEmissiveProperties(int index) {
 #if RM_ACTIVE_SCENE == SCENE_SHOWCASE
 	// Showcase scene: glowing emissives inside SSS materials
-	float glowPulse = 0.8 + 0.2 * sin(iTime * 2.0 + float(index) * 2.0);
-	float flicker = 0.9 + 0.1 * sin(iTime * 8.0) * sin(iTime * 12.0 + 1.0);
+	float seed = fract(sin(float(index) * 12.9898) * 43758.5453);
+	float phase = seed * 6.28318 * RM_EMISSIVE_FLICKER_STAGGER;
+	float glowPulse = 0.8 + 0.2 * sin(iTime * 2.0 + float(index) * 2.0 + phase * 0.6);
+	float flicker = 0.9 + 0.1 * sin(iTime * 8.0 + phase) * sin(iTime * 12.0 + 1.0 + phase * 1.3);
 	float interiorIntensity = 2.0 * flicker;  // Subtle glow for SSS materials
 	
 	if (index == 0) {
@@ -113,6 +144,25 @@ vec4 getEmissiveProperties(int index) {
 	} else {
 		// Spotlight marker (dim)
 		return vec4(1.0, 0.95, 0.9, 0.25);
+	}
+#elif RM_ACTIVE_SCENE == SCENE_NIGHT_LIGHTS
+	// Night lights scene: lantern flicker with warm/cool mix
+	float seed = fract(sin(float(index) * 78.233) * 43758.5453);
+	float phase = seed * 6.28318 * RM_EMISSIVE_FLICKER_STAGGER;
+	float baseFlicker = 0.85 + 0.15 * sin(iTime * 6.5 + phase) * sin(iTime * 9.0 + 1.7 + phase * 1.2);
+	float pulse = 0.9 + 0.1 * sin(iTime * 1.4 + phase * 0.8);
+	float intensity = baseFlicker * pulse * 1.6;
+
+	if (index == 0) {
+		return vec4(1.0, 0.6, 0.25, intensity);
+	} else if (index == 1) {
+		return vec4(0.9, 0.8, 0.3, intensity * 0.9);
+	} else if (index == 2) {
+		return vec4(0.2, 0.7, 1.0, intensity * 0.75);
+	} else if (index == 3) {
+		return vec4(1.0, 0.35, 0.2, intensity * 0.85);
+	} else {
+		return vec4(0.6, 0.85, 1.0, intensity * 0.65);
 	}
 #else
 	// Default: no emission

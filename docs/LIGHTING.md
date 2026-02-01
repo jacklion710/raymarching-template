@@ -308,6 +308,11 @@ vec3 getGlobalIllumination(vec3 normals, vec3 mate, float occ);
 - Uses a sky/ground hemisphere blend
 - Multiplied by albedo and AO for contact‑aware bounce
 - Ambient term is reduced when GI is enabled to avoid double lighting
+- Material-aware rules:
+  - Metals/transmissive surfaces reduce diffuse GI
+  - SSS materials tint GI toward subsurface color and reduce strength
+  - Emissive and toon materials suppress GI
+  - Smooth (low roughness) surfaces get less diffuse GI
 
 ## Adding New Lights
 

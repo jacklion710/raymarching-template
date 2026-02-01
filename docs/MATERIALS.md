@@ -117,6 +117,10 @@ Material mat = Material(
 | `matBeetleShell(color)` | Beetle carapace | 0.7, metallic |
 | `matPearl()` | Pearl | 0.4 |
 
+Notes:
+- Iridescence now uses a thin-film interference approximation (multi-band spectral phase).
+- Roughness and transmission dampen or boost the effect for more believable materials.
+
 ### Subsurface Scattering Materials
 
 | Function | Description | SSS Color |

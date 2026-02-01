@@ -54,23 +54,28 @@ void getPostProcessing(inout vec3 col, vec3 rd, vec3 ro, vec3 bgCol, float dist,
 	// Exposure adjustment (before tone mapping)
 	// col = exposure(col, 0.99);
 	
+#if RM_POST_PROFILE == RM_POST_PROFILE_NEUTRAL
+	// Neutral: minimal post so material albedo reads clearly.
+	// Keep only tone mapping + gamma for display.
+	col = toneMapping(col);
+#else
 	// ===== TONE MAPPING =====
 	col = toneMapping(col);
 	
 	// ===== POST-TONEMAPPING EFFECTS (display space) =====
 	
-	// Color grading - uncomment to enable
+	// Color grading
 	col = contrast(col, 1.1);                    // >1.0 = more contrast
 	col = saturation(col, 1.15);                 // >1.0 = more saturated
-	col = brightness(col, 0.02);                  // +/- brightness shift
+	col = brightness(col, 0.02);                 // +/- brightness shift
 	col = colorTemperature(col, 0.5);            // -1=cool, 0=neutral, 1=warm
-	// col = hueShift(col, 0.0);                    // radians rotation
+	// col = hueShift(col, 0.0);                  // radians rotation
 	
 	// Split toning - adds color character
 	col = splitToning(col, vec3(0.9, 0.95, 1.1), vec3(1.1, 1.0, 0.9), 0.75);
 	
-	// Lift/Gamma/Gain presets - uncomment ONE to try
-	col = liftGammaGain(col, vec3(0.0), vec3(1.0), vec3(1.0));  // Neutral (no change)
+	// Lift/Gamma/Gain presets - neutral (no change)
+	col = liftGammaGain(col, vec3(0.0), vec3(1.0), vec3(1.0));
 	
 	// TEAL AND ORANGE (blockbuster movie look - cool shadows, warm highlights)
 	// col = liftGammaGain(col, vec3(-0.02, 0.01, 0.04), vec3(0.95, 1.0, 1.05), vec3(1.1, 0.98, 0.85));
@@ -102,6 +107,7 @@ void getPostProcessing(inout vec3 col, vec3 rd, vec3 ro, vec3 bgCol, float dist,
 	
 	// Film grain - organic texture (subtle)
 	col = filmGrain(col, uv, iTime, 0.03);
+#endif
 	
 	// ===== FINAL OUTPUT =====
 	
