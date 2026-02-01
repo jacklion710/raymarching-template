@@ -16,6 +16,7 @@ vec3 hgSdfModifiersSceneLights(vec3 hitPos, vec3 normals, vec3 rd, vec3 mate);
 vec3 iridescenceShowcaseSceneLights(vec3 hitPos, vec3 normals, vec3 rd, vec3 mate);
 vec3 nightLightsSceneLights(vec3 hitPos, vec3 normals, vec3 rd, vec3 mate);
 vec3 paletteConcertSceneLights(vec3 hitPos, vec3 normals, vec3 rd, vec3 mate);
+vec3 optimizationTestSceneLights(vec3 hitPos, vec3 normals, vec3 rd, vec3 mate);
 
 // Scene-specific background dispatcher (defined in marching-engine.glsl)
 vec3 getBackground(vec3 rd, vec3 ro);
@@ -43,6 +44,8 @@ vec3 getSceneLights(vec3 hitPos, vec3 normals, vec3 rd, vec3 mate) {
 	return nightLightsSceneLights(hitPos, normals, rd, mate);
 #elif RM_ACTIVE_SCENE == SCENE_PALETTE_CONCERT
 	return paletteConcertSceneLights(hitPos, normals, rd, mate);
+#elif RM_ACTIVE_SCENE == SCENE_OPTIMIZATION_TEST
+	return optimizationTestSceneLights(hitPos, normals, rd, mate);
 #endif
 }
 
@@ -709,7 +712,7 @@ vec4 mapReflection(vec3 ro, vec3 rd) {
 		pos = ro + rd * currDist;
 		scene = getDist(pos);
 		dist = scene.w;
-		currDist += dist;
+		currDist += dist * rmGetStepScale(currDist);
 		if (abs(dist) < minDist || currDist > farClip) {
 			break;
 		}

@@ -14,7 +14,6 @@
 ### Performance
 - [ ] Profile caustic shadows on various GPUs
 - [ ] Optimize SSS thickness sampling
-- [x] Add LOD system for distant objects
 - [ ] Adaptive step count by distance (LOD bands)
 - [ ] Feature gating by distance (refraction/SSS/iridescence/caustics)
 - [ ] Reduce AO/shadow sample counts for far hits
@@ -53,3 +52,4 @@ for metallic materials
 - [x] Flickering point and cone lights
 - [x] Night lights showcase scene with moon
 - [x] Palette function for stylized color schemes
+- [x] Add LOD system for distant objects

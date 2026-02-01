@@ -5,7 +5,7 @@
 #define RM_GLOBALS_GLSL
 
 // Scene selection - change this to switch between scenes
-// Available scenes: SCENE_SHOWCASE, SCENE_CAUSTICS, SCENE_SSS_DEMO, SCENE_ENV_MAP, SCENE_HG_SDF_MODIFIERS, SCENE_IRIDESCENCE_SHOWCASE, SCENE_NIGHT_LIGHTS, SCENE_PALETTE_CONCERT
+// Available scenes: SCENE_SHOWCASE, SCENE_CAUSTICS, SCENE_SSS_DEMO, SCENE_ENV_MAP, SCENE_HG_SDF_MODIFIERS, SCENE_IRIDESCENCE_SHOWCASE, SCENE_NIGHT_LIGHTS, SCENE_PALETTE_CONCERT, SCENE_OPTIMIZATION_TEST
 #define SCENE_SHOWCASE 0
 #define SCENE_CAUSTICS 1
 #define SCENE_SSS_DEMO 2
@@ -14,9 +14,10 @@
 #define SCENE_IRIDESCENCE_SHOWCASE 5
 #define SCENE_NIGHT_LIGHTS 6
 #define SCENE_PALETTE_CONCERT 7
+#define SCENE_OPTIMIZATION_TEST 8
 
 #ifndef RM_ACTIVE_SCENE
-#define RM_ACTIVE_SCENE SCENE_PALETTE_CONCERT
+#define RM_ACTIVE_SCENE SCENE_OPTIMIZATION_TEST
 #endif
 
 // Raymarch settings
@@ -103,6 +104,19 @@
 #ifndef RM_LOD_MAX_STEPS_SCALE_FAR
 #define RM_LOD_MAX_STEPS_SCALE_FAR 0.35
 #endif
+
+// Distance-based step scaling (1.0 = no scaling)
+#ifndef RM_ENABLE_STEP_SCALE
+#define RM_ENABLE_STEP_SCALE 1
+#endif
+
+#ifndef RM_STEP_SCALE_MID
+#define RM_STEP_SCALE_MID 1.2
+#endif
+
+#ifndef RM_STEP_SCALE_FAR
+#define RM_STEP_SCALE_FAR 1.5
+#endif
 // Emissive flicker phase offset control (0 = synced, 1 = staggered)
 #ifndef RM_EMISSIVE_FLICKER_STAGGER
 #define RM_EMISSIVE_FLICKER_STAGGER 1.0
@@ -131,6 +145,17 @@ float rmGetLodFactor(float dist){
 	return smoothstep(mid, far, dist);
 #else
 	return 0.0;
+#endif
+}
+
+float rmGetStepScale(float dist){
+#if RM_ENABLE_STEP_SCALE
+	float mid = farClip * RM_LOD_MID_RATIO;
+	float far = farClip * RM_LOD_FAR_RATIO;
+	float t = smoothstep(mid, far, dist);
+	return mix(RM_STEP_SCALE_MID, RM_STEP_SCALE_FAR, t);
+#else
+	return 1.0;
 #endif
 }
 

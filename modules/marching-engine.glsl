@@ -32,6 +32,7 @@ vec4 hgSdfModifiersScene(vec3 pos);
 vec4 iridescenceShowcaseScene(vec3 pos);
 vec4 nightLightsScene(vec3 pos);
 vec4 paletteConcertScene(vec3 pos);
+vec4 optimizationTestScene(vec3 pos);
 
 // Scene background forward declarations
 // Backgrounds are evaluated in "sky UV" derived from the view ray direction.
@@ -43,6 +44,7 @@ vec3 hgSdfModifiersBackground(vec2 skyUV, vec3 rd, vec3 ro);
 vec3 iridescenceShowcaseBackground(vec2 skyUV, vec3 rd, vec3 ro);
 vec3 nightLightsBackground(vec2 skyUV, vec3 rd, vec3 ro);
 vec3 paletteConcertBackground(vec2 skyUV, vec3 rd, vec3 ro);
+vec3 optimizationTestBackground(vec2 skyUV, vec3 rd, vec3 ro);
 
 // O(1): Get the distance bound to the nearest surface in the scene.
 // pos: world-space position being sampled
@@ -64,6 +66,8 @@ vec4 getDist(vec3 pos) {
 	return nightLightsScene(pos);
 #elif RM_ACTIVE_SCENE == SCENE_PALETTE_CONCERT
 	return paletteConcertScene(pos);
+#elif RM_ACTIVE_SCENE == SCENE_OPTIMIZATION_TEST
+	return optimizationTestScene(pos);
 #endif
 }
 
@@ -87,6 +91,8 @@ vec3 getBackground(vec3 rd, vec3 ro) {
 	return nightLightsBackground(skyUV, rd, ro);
 #elif RM_ACTIVE_SCENE == SCENE_PALETTE_CONCERT
 	return paletteConcertBackground(skyUV, rd, ro);
+#elif RM_ACTIVE_SCENE == SCENE_OPTIMIZATION_TEST
+	return optimizationTestBackground(skyUV, rd, ro);
 #endif
 }
 
@@ -122,7 +128,7 @@ vec4 map(vec3 ro, vec3 rd){
 		pos = ro + rd * currDist;
 		scene = getDist(pos);
 		dist = scene.w;
-		currDist += dist;
+		currDist += dist * rmGetStepScale(currDist);
 		hitMap = i / MAX_STEPS - 1.0;
 		if(abs(dist) < minDist || currDist > farClip){
 			break;
