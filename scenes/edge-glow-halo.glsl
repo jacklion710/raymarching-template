@@ -41,20 +41,23 @@ vec3 edgeGlowHaloBackground(vec2 skyUV, vec3 rd, vec3 ro) {
 	vec3 closest = oc - rd * t;
 	float d2 = dot(closest, closest);
 
-	float inner = radius * 1.01;
-	float outer = radius * 1.1;
+	// Staggered boundary to create ray-like projections
+	float angle = atan(closest.z, closest.x);
+	float rayMask = 0.75 + 0.25 * sin(angle * 12.0 + iTime * 0.8);
+	float rayMask2 = 0.7 + 0.3 * sin(angle * 24.0 - iTime * 1.3);
+	float outer = radius * (1.08 + 0.06 * rayMask + 0.04 * rayMask2);
+	float inner = radius * 1.0;
 	float glow = smoothstep(outer * outer, inner * inner, d2);
 	glow *= exp(-t * 0.15);
 
 	// Artistic modulation: pulsing rings + subtle angular shimmer
 	float dist = sqrt(max(d2, 0.000001));
 	float rings = 0.6 + 0.4 * sin(dist * 18.0 - iTime * 3.2);
-	float angle = atan(closest.z, closest.x);
 	float shimmer = 0.85 + 0.15 * sin(angle * 6.0 + iTime * 1.7);
 	float pulse = 0.85 + 0.15 * sin(iTime * 2.0);
 
 	vec3 glowCol = vec3(1.0, 0.1, 0.1);
-	return glowCol * glow * rings * shimmer * pulse * 0.95;
+	return glowCol * glow * rings * shimmer * pulse * 0.55;
 }
 
 #endif

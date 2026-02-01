@@ -27,9 +27,12 @@ void main(void) {
 	float focalDistance = length(ro - ta);
 	mat3 camMat = getCameraMatrix(ro, ta);
 	
-	// Ray direction
+	// Ray direction (aspect-corrected)
 	float planeDist = 1.6; // Distance to the plane
-	vec3 rd = normalize(camMat * vec3(jit_in.texcoord, planeDist));
+	float aspect = iResolution.x / max(iResolution.y, 0.0001);
+	vec2 viewUv = jit_in.texcoord;
+	viewUv.x *= aspect;
+	vec3 rd = normalize(camMat * vec3(viewUv, planeDist));
 	
 	// UV coords for screen-space effects (0 to 1)
 	vec2 uv = jit_in.texcoord * 0.5 + 0.5;
