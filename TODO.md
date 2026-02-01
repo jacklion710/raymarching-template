@@ -18,8 +18,8 @@
 - [ ] Feature gating by distance (refraction/SSS/iridescence/caustics)
 - [x] Reduce AO/shadow sample counts for far hits
 - [ ] Shadow LOD: switch to simple shadows at distance
-- [ ] Material simplification for far objects
-- [ ] Early-out for rays unlikely to hit (sky/background)
+- [x] Material simplification for far objects
+- [x] Early-out for rays unlikely to hit (sky/background)
 - [ ] Scene-level culling with cheap bounding volumes
 
 ## Low Priority / Future Ideas

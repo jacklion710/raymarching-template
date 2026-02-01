@@ -168,6 +168,7 @@ vec3 shadeHit(vec3 hitPos, vec3 rd, vec3 material, vec3 bgCol) {
 	vec3 normals = getNorm(hitPos);
 	float hitDist = length(hitPos - camPos);
 	gLodFactor = rmGetLodFactor(hitDist);
+	Material savedMat = gMaterial;
 	
 	// Get material properties - save these before any calls that might overwrite gMaterial
 	float metallic = gMaterial.metallic;
@@ -177,6 +178,24 @@ vec3 shadeHit(vec3 hitPos, vec3 rd, vec3 material, vec3 bgCol) {
 	float ior = gMaterial.ior;
 	float iridescence = gMaterial.iridescence;
 	float lodFactor = gLodFactor;
+
+	// Material simplification for far hits (diffuse-only, keep emission)
+#if RM_ENABLE_LOD
+	if (lodFactor > 0.7) {
+		Material simpleMat = savedMat;
+		simpleMat.metallic = 0.0;
+		simpleMat.roughness = 1.0;
+		simpleMat.iridescence = 0.0;
+		simpleMat.subsurface = 0.0;
+		simpleMat.transmission = 0.0;
+		simpleMat.toonSteps = 0.0;
+		gMaterial = simpleMat;
+		metallic = 0.0;
+		roughness = 1.0;
+		transmission = 0.0;
+		iridescence = 0.0;
+	}
+#endif
 	
 	// Apply iridescence to material color for consistent appearance in reflections
 #if RM_ENABLE_IRIDESCENCE
@@ -252,6 +271,7 @@ vec3 shadeHit(vec3 hitPos, vec3 rd, vec3 material, vec3 bgCol) {
 	// Add emission (self-illumination) - this is the dominant color for glowing objects
 	col += emission;
 
+	gMaterial = savedMat;
 	return col;
 }
 
