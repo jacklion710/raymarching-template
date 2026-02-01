@@ -46,7 +46,7 @@ void getPostProcessing(inout vec3 col, vec3 rd, vec3 ro, vec3 bgCol, float dist,
 	col += getEmissiveGlow(ro, rd, dist);
 	
 	// Lens flare
-	col += getLensFlare(rd, ro, lightPos, vec3(1.0, 0.75, 0.7), 10.0) * 0.5;
+	// col += getLensFlare(rd, ro, lightPos, vec3(1.0, 0.75, 0.7), 10.0) * 0.5;
 
 	// Distance fog
 	col = distanceFog(col, bgCol, dist);
@@ -106,7 +106,7 @@ void getPostProcessing(inout vec3 col, vec3 rd, vec3 ro, vec3 bgCol, float dist,
 	col = vignette(col, vigUV, 0.4, 0.7);
 	
 	// Film grain - organic texture (subtle)
-	col = filmGrain(col, uv, iTime, 0.03);
+	// col = filmGrain(col, uv, iTime, 0.03);
 #endif
 	
 	// ===== FINAL OUTPUT =====

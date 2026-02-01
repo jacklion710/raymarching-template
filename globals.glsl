@@ -154,9 +154,13 @@ uniform float farClip, nearClip;
 
 float rmGetLodFactor(float dist){
 #if RM_ENABLE_LOD
+	#if RM_ACTIVE_SCENE == SCENE_EDGE_GLOW_HALO
+	return 0.0;
+	#else
 	float mid = farClip * RM_LOD_MID_RATIO;
 	float far = farClip * RM_LOD_FAR_RATIO;
 	return smoothstep(mid, far, dist);
+	#endif
 #else
 	return 0.0;
 #endif
@@ -164,10 +168,14 @@ float rmGetLodFactor(float dist){
 
 float rmGetStepScale(float dist){
 #if RM_ENABLE_STEP_SCALE
+	#if RM_ACTIVE_SCENE == SCENE_EDGE_GLOW_HALO
+	return 1.0;
+	#else
 	float mid = farClip * RM_LOD_MID_RATIO;
 	float far = farClip * RM_LOD_FAR_RATIO;
 	float t = smoothstep(mid, far, dist);
 	return mix(RM_STEP_SCALE_MID, RM_STEP_SCALE_FAR, t);
+	#endif
 #else
 	return 1.0;
 #endif
