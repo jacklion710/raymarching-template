@@ -117,6 +117,19 @@
 #ifndef RM_STEP_SCALE_FAR
 #define RM_STEP_SCALE_FAR 1.5
 #endif
+
+// Early-out for sky-dominant primary rays
+#ifndef RM_ENABLE_SKY_EARLY_OUT
+#define RM_ENABLE_SKY_EARLY_OUT 1
+#endif
+
+#ifndef RM_SKY_EARLY_OUT_Y
+#define RM_SKY_EARLY_OUT_Y 0.6
+#endif
+
+#ifndef RM_SKY_EARLY_OUT_CAM_Y
+#define RM_SKY_EARLY_OUT_CAM_Y 0.05
+#endif
 // Emissive flicker phase offset control (0 = synced, 1 = staggered)
 #ifndef RM_EMISSIVE_FLICKER_STAGGER
 #define RM_EMISSIVE_FLICKER_STAGGER 1.0
@@ -156,6 +169,14 @@ float rmGetStepScale(float dist){
 	return mix(RM_STEP_SCALE_MID, RM_STEP_SCALE_FAR, t);
 #else
 	return 1.0;
+#endif
+}
+
+bool rmIsSkyRay(vec3 rd, vec3 ro) {
+#if RM_ENABLE_SKY_EARLY_OUT
+	return rd.y > RM_SKY_EARLY_OUT_Y && ro.y > RM_SKY_EARLY_OUT_CAM_Y;
+#else
+	return false;
 #endif
 }
 

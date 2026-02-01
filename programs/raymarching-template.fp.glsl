@@ -49,10 +49,14 @@ void main(void) {
 		vec3 newRo = ro + offset;
 		vec3 newRd = normalize(focalPoint - newRo);
 		
-		// Raymarching
-		vec4 scene = map(newRo, newRd);
-		vec3 material = scene.rgb;
-		float d = scene.w;
+		// Raymarching (sky early-out)
+		float d = farClip + 1.0;
+		vec3 material = vec3(0.0);
+		if (!rmIsSkyRay(newRd, newRo)) {
+			vec4 scene = map(newRo, newRd);
+			material = scene.rgb;
+			d = scene.w;
+		}
 		distAccum += clamp(d, 0.0, farClip);
 
 		// Color the scene based on the distance to the object
@@ -69,9 +73,13 @@ void main(void) {
 
 #else
 	// No DoF - single ray
-	vec4 scene = map(ro, rd);
-	vec3 material = scene.rgb;
-	dist = scene.w;
+	vec3 material = vec3(0.0);
+	dist = farClip + 1.0;
+	if (!rmIsSkyRay(rd, ro)) {
+		vec4 scene = map(ro, rd);
+		material = scene.rgb;
+		dist = scene.w;
+	}
 
 	if (dist > farClip){
 		col = bgCol;
