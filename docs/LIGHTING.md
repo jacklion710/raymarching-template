@@ -130,6 +130,7 @@ float getSimpleShadow(vec3 hitPos, vec3 rd, float k);
 - `k` controls penumbra softness (higher = softer)
 - Emissive objects don't block light
 - Transmissive objects cast partial shadows
+- Shadow ray length and step size scale down at far LOD for performance
 
 ### Colored Caustic Shadows
 
@@ -153,6 +154,8 @@ Returns RGB shadow color for:
 
 **Iridescent materials:**
 - Position-dependent rainbow tinting
+
+**LOD note:** Colored caustics may fall back to simple shadows at far distance.
 
 ### Shadow Softness
 

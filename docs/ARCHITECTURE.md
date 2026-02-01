@@ -37,6 +37,17 @@ raymarching-template/
 │   ├── rotate.glsl              # Rotation matrices
 │   └── sdf.glsl                 # Basic SDF primitives
 │
+├── scenes/                      # Scene definitions (SDF + materials + lights)
+│   ├── showcase.glsl
+│   ├── caustics.glsl
+│   ├── sss-demo.glsl
+│   ├── env-map-demo.glsl
+│   ├── hg-sdf-modifiers.glsl
+│   ├── iridescence-showcase.glsl
+│   ├── night-lights.glsl
+│   ├── palette-concert.glsl
+│   └── optimization-test.glsl
+│
 └── programs/                    # Shader entry points
     ├── raymarching-template.fp.glsl  # Fragment shader (main)
     └── raymarching-template.vp.glsl  # Vertex shader
@@ -49,8 +60,7 @@ The JXS file defines the include order, which is critical for GLSL compilation. 
 ```
 1. globals.glsl          # Constants, uniforms, feature flags
 2. noise.glsl            # No dependencies
-3. noise.glsl            # No dependencies
-4. background.glsl       # Background helpers (depends on globals)
+3. background.glsl       # Background helpers (depends on globals)
 5. modifiers.glsl        # No dependencies
 6. rotate.glsl           # No dependencies
 7. hg_sdf.glsl           # SDF primitives library
@@ -63,6 +73,7 @@ The JXS file defines the include order, which is critical for GLSL compilation. 
 14. camera.glsl          # Camera, shading (depends on lighting)
 15. post.glsl            # Post-processing
 16. marching-engine.glsl # Scene, raymarcher (depends on all above)
+17. scenes/*.glsl        # Scene implementations (SDF + lighting + background)
 ```
 
 ## Data Flow
@@ -148,6 +159,8 @@ struct Material {
 
 ### Global State
 The `gMaterial` global is set by `getDist()` and read by lighting functions. This enables material-aware lighting without passing materials through every function.
+
+`gLodFactor` is set per hit in `shadeHit()` and used to scale quality with distance (LOD, shadow/AO sampling, etc.).
 
 ## Max/MSP Integration
 

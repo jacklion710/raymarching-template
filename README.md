@@ -8,6 +8,8 @@ A modular raymarching shader template for Max/MSP Jitter with PBR materials, adv
 - **Advanced Materials** - SSS, iridescence, transparency/refraction, toon shading
 - **Flexible Lighting** - Directional, point, and spot lights with colored caustic shadows and optional GI
 - **Modular Architecture** - Feature flags for enabling/disabling techniques
+- **Palette System** - Stylized palette utilities with material-aware application
+- **Performance Tooling** - LOD controls, distance-based step scaling, sky early-out
 - **Depth of Field** - Polygon-shaped bokeh with temporal jitter
 - **Extensible** - Clean separation of concerns for easy customization
 
@@ -46,6 +48,7 @@ raymarching-template/
 | [Feature Flags](docs/FEATURE-FLAGS.md) | Performance toggles |
 | [Extending](docs/EXTENDING.md) | How to add features |
 | [Modules](docs/MODULES.md) | Module API reference |
+| [Optimization](docs/OPTIMIZATION.md) | Performance tuning overview |
 
 ## Feature Flags
 
@@ -63,6 +66,9 @@ Toggle rendering techniques in `globals.glsl`:
 #define RM_ENABLE_CAUSTIC_SHADOWS 1  // Colored shadows (expensive)
 #define RM_ENABLE_ENV_MAP 0          // Environment map for reflections
 #define RM_ENABLE_GI 0               // Cheap hemispherical GI
+#define RM_ENABLE_LOD 1              // Distance-based quality scaling
+#define RM_ENABLE_STEP_SCALE 1       // Increase step length with distance
+#define RM_ENABLE_SKY_EARLY_OUT 1    // Skip march for sky-dominant rays
 ```
 
 Set to `0` to disable features for performance.
@@ -104,7 +110,9 @@ See [Materials Documentation](docs/MATERIALS.md) for full list.
 1. **Disable caustic shadows** - Set `RM_ENABLE_CAUSTIC_SHADOWS 0`
 2. **Reduce MAX_STEPS** - Lower from 500 to 200-300
 3. **Disable unused features** - Turn off SSS, refraction if not used
-4. **Simplify scene** - Fewer objects = faster rendering
+4. **Use LOD + step scaling** - Keep `RM_ENABLE_LOD` and `RM_ENABLE_STEP_SCALE` on
+5. **Enable sky early-out** - `RM_ENABLE_SKY_EARLY_OUT 1` for sky-heavy views
+6. **Simplify scene** - Fewer objects = faster rendering
 
 ## Requirements
 

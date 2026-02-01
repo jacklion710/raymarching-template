@@ -86,6 +86,23 @@ Material mat = Material(
 );
 ```
 
+## Palette Utilities
+
+Palette helpers live in `modules/color.glsl` and are designed for stylized looks that can still respect material types.
+
+```glsl
+PaletteSample p = rmPaletteConcert(t);
+Material baseMat = createMaterial(vec3(0.2, 0.4, 0.6), 0.4, 0.2);
+Material tuned = applyPaletteToMaterial(baseMat, p, 0.6, RM_PALETTE_MODE_SPEC_TINT);
+```
+
+**Modes:**
+- `RM_PALETTE_MODE_ALBEDO` - palette drives diffuse color
+- `RM_PALETTE_MODE_SPEC_TINT` - palette tints metal/spec response
+- `RM_PALETTE_MODE_EMISSIVE` - palette drives emission/glow
+- `RM_PALETTE_MODE_ABSORPTION` - palette drives SSS absorption tint
+- `RM_PALETTE_MODE_FULL_STYLIZED` - full stylized mapping
+
 ## Preset Materials
 
 ### Basic Materials

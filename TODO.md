@@ -16,10 +16,7 @@
 - [ ] Optimize SSS thickness sampling
 - [ ] Adaptive step count by distance (LOD bands)
 - [ ] Feature gating by distance (refraction/SSS/iridescence/caustics)
-- [x] Reduce AO/shadow sample counts for far hits
 - [ ] Shadow LOD: switch to simple shadows at distance
-- [x] Material simplification for far objects
-- [x] Early-out for rays unlikely to hit (sky/background)
 - [ ] Scene-level culling with cheap bounding volumes
 
 ## Low Priority / Future Ideas
@@ -53,3 +50,6 @@ for metallic materials
 - [x] Night lights showcase scene with moon
 - [x] Palette function for stylized color schemes
 - [x] Add LOD system for distant objects
+- [x] Reduce AO/shadow sample counts for far hits
+- [x] Material simplification for far objects
+- [x] Early-out for rays unlikely to hit (sky/background)

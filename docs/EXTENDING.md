@@ -8,10 +8,11 @@ This guide covers common extension tasks with step-by-step instructions.
 2. [Creating a Custom Material](#creating-a-custom-material)
 3. [Adding a New Material Preset](#adding-a-new-material-preset)
 4. [Adding a New Light](#adding-a-new-light)
-5. [Creating a New Feature Flag](#creating-a-new-feature-flag)
-6. [Adding Post-Processing Effects](#adding-post-processing-effects)
-7. [Adding or Customizing a Background (Sky)](#adding-or-customizing-a-background-sky)
-8. [Common Pitfalls](#common-pitfalls)
+5. [Adding a New Scene](#adding-a-new-scene)
+6. [Creating a New Feature Flag](#creating-a-new-feature-flag)
+7. [Adding Post-Processing Effects](#adding-post-processing-effects)
+8. [Adding or Customizing a Background (Sky)](#adding-or-customizing-a-background-sky)
+9. [Common Pitfalls](#common-pitfalls)
 
 ---
 
@@ -204,6 +205,18 @@ In `modules/lighting.glsl`, within `getLight()` under `#if USE_POINT_LIGHT`:
     col += getPointLight(hitPos, orbitPos, normals, rd, refRd, orbitCol, mate);
 }
 ```
+
+---
+
+## Adding a New Scene
+
+1. Create a new scene file in `scenes/` with:
+   - `vec4 myScene(vec3 pos)` (SDF + materials)
+   - `vec3 mySceneLights(...)`
+   - `vec3 mySceneBackground(...)`
+2. Include the scene in `raymarching-template.jxs`.
+3. Add forward declarations + dispatch cases in `modules/marching-engine.glsl` and `modules/lighting.glsl`.
+4. Add a scene ID in `globals.glsl` and set `RM_ACTIVE_SCENE`.
 
 ---
 

@@ -14,6 +14,9 @@ MAX_STEPS          // Maximum raymarch iterations (500)
 MIN_DIST           // Surface hit threshold (0.0001)
 RM_ENABLE_*        // Feature flags
 RM_ENABLE_GI       // Global illumination toggle
+RM_ENABLE_LOD      // Distance-based quality scaling
+RM_ENABLE_STEP_SCALE // Step length increases with distance
+RM_ENABLE_SKY_EARLY_OUT // Skip march for sky-dominant rays
 
 // Uniforms
 uniform float iTime;
@@ -21,6 +24,14 @@ uniform vec2 iResolution;
 uniform vec3 lightPos;
 uniform vec3 camPos;
 uniform float farClip, nearClip;
+
+// LOD helpers
+float rmGetLodFactor(float dist);
+float rmGetStepScale(float dist);
+bool rmIsSkyRay(vec3 rd, vec3 ro);
+
+// Per-hit LOD state
+float gLodFactor;
 ```
 
 **Dependencies:** None (must be included first)
@@ -276,10 +287,17 @@ vec3 bend(vec3 p, float amount);
 
 **Key exports:**
 ```glsl
-vec3 rgb2hsv(vec3 c);
-vec3 hsv2rgb(vec3 c);
-vec3 palette(float t, vec3 a, vec3 b, vec3 c, vec3 d);
-// Implementation varies
+vec3 rmPalette(float t, vec3 a, vec3 b, vec3 c, vec3 d);
+struct PaletteSample { vec3 albedo; vec3 specTint; vec3 emissive; vec3 absorption; float glow; };
+PaletteSample rmPaletteConcert(float t);
+Material applyPaletteToMaterial(Material baseMat, PaletteSample p, float influence, int mode);
+// RM_PALETTE_MODE_* constants for mode selection
+vec3 gammaCorrection(vec3 col);
+vec3 toneMapping(vec3 col);
+vec3 exposure(vec3 col, float exposure);
+vec3 contrast(vec3 col, float contrast);
+vec3 saturation(vec3 col, float saturation);
+vec3 hueShift(vec3 col, float hueShift);
 ```
 
 ---
@@ -290,8 +308,9 @@ vec3 palette(float t, vec3 a, vec3 b, vec3 c, vec3 d);
 
 **Key exports:**
 ```glsl
-vec3 applyFog(vec3 col, float dist, vec3 fogColor, float fogDensity);
-// Implementation varies
+vec3 distanceFog(vec3 col, vec3 bgCol, float dist);
+vec3 colorFog(vec3 col, vec3 bgCol, float dist);
+vec3 fogBlend(vec3 col, vec3 bgCol, float dist);
 ```
 
 ---
@@ -302,9 +321,7 @@ vec3 applyFog(vec3 col, float dist, vec3 fogColor, float fogDensity);
 
 **Key exports:**
 ```glsl
-vec3 opRep(vec3 p, vec3 c);           // Infinite repetition
-vec3 opRepLim(vec3 p, vec3 c, vec3 l); // Limited repetition
-// Implementation varies
+vec3 opRepeatFinite(vec3 p, vec3 cellSize, vec3 halfCount, vec3 origin);
 ```
 
 ---

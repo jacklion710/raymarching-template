@@ -22,6 +22,9 @@ All flags are defined in `globals.glsl`:
 #define RM_ENABLE_CAUSTIC_SHADOWS 1
 #define RM_ENABLE_ENV_MAP 0
 #define RM_ENABLE_GI 0
+#define RM_ENABLE_LOD 1
+#define RM_ENABLE_STEP_SCALE 1
+#define RM_ENABLE_SKY_EARLY_OUT 1
 ```
 
 ## Flag Reference
@@ -189,6 +192,46 @@ All flags are defined in `globals.glsl`:
 
 **When to disable:** For flat lighting or maximum performance
 
+---
+
+### RM_ENABLE_LOD
+
+**Controls:** Distance-based quality scaling (shading + shadow/AO sample reduction)
+
+**Affects:**
+- LOD factor used in `camera.glsl` and `lighting.glsl`
+- Reduces iridescence/SSS/refraction and shadow cost at distance
+
+**Performance cost:** Low overhead, medium savings (scene-dependent)
+
+**When to disable:** If you need identical shading at all distances
+
+---
+
+### RM_ENABLE_STEP_SCALE
+
+**Controls:** Increases ray step length as distance grows
+
+**Affects:**
+- `map()` and `mapReflection()` step length
+
+**Performance cost:** Low overhead, medium savings for far geometry
+
+**When to disable:** If you see thin geometry missed at distance
+
+---
+
+### RM_ENABLE_SKY_EARLY_OUT
+
+**Controls:** Early-out for sky-dominant primary rays
+
+**Affects:**
+- Primary raymarch in `raymarching-template.fp.glsl`
+
+**Performance cost:** Low overhead, big savings in sky-heavy shots
+
+**When to disable:** If you have geometry above the camera
+
 ## Performance Presets
 
 ### Maximum Quality
@@ -204,6 +247,9 @@ All flags are defined in `globals.glsl`:
 #define RM_ENABLE_CAUSTIC_SHADOWS 1
 #define RM_ENABLE_ENV_MAP 0
 #define RM_ENABLE_GI 0
+#define RM_ENABLE_LOD 1
+#define RM_ENABLE_STEP_SCALE 1
+#define RM_ENABLE_SKY_EARLY_OUT 1
 ```
 
 ### Balanced (Recommended)
@@ -219,6 +265,9 @@ All flags are defined in `globals.glsl`:
 #define RM_ENABLE_CAUSTIC_SHADOWS 0  // Disable expensive caustics
 #define RM_ENABLE_ENV_MAP 0
 #define RM_ENABLE_GI 0
+#define RM_ENABLE_LOD 1
+#define RM_ENABLE_STEP_SCALE 1
+#define RM_ENABLE_SKY_EARLY_OUT 1
 ```
 
 ### Performance Mode
@@ -234,6 +283,9 @@ All flags are defined in `globals.glsl`:
 #define RM_ENABLE_CAUSTIC_SHADOWS 0
 #define RM_ENABLE_ENV_MAP 0
 #define RM_ENABLE_GI 0
+#define RM_ENABLE_LOD 1
+#define RM_ENABLE_STEP_SCALE 1
+#define RM_ENABLE_SKY_EARLY_OUT 1
 ```
 
 ### Minimal (Maximum Performance)
@@ -249,6 +301,9 @@ All flags are defined in `globals.glsl`:
 #define RM_ENABLE_CAUSTIC_SHADOWS 0
 #define RM_ENABLE_ENV_MAP 0
 #define RM_ENABLE_GI 0
+#define RM_ENABLE_LOD 0
+#define RM_ENABLE_STEP_SCALE 0
+#define RM_ENABLE_SKY_EARLY_OUT 0
 ```
 
 ## Raymarch Settings
@@ -264,6 +319,32 @@ In addition to feature flags, `globals.glsl` contains raymarch parameters:
 - Lower `MAX_STEPS` (200-300) for better performance
 - Increase `MIN_DIST` (0.001) for faster but less precise hits
 - For distant views, both can be relaxed significantly
+
+### LOD + Step Scaling Controls
+
+```glsl
+#define RM_LOD_MID_RATIO 0.35
+#define RM_LOD_FAR_RATIO 0.65
+#define RM_LOD_MIN_DIST_SCALE_MID 2.5
+#define RM_LOD_MIN_DIST_SCALE_FAR 5.0
+#define RM_LOD_MAX_STEPS_SCALE_MID 0.6
+#define RM_LOD_MAX_STEPS_SCALE_FAR 0.35
+#define RM_STEP_SCALE_MID 1.2
+#define RM_STEP_SCALE_FAR 1.5
+```
+
+- Increase ratios to keep higher quality farther away
+- Reduce step scales if thin geometry is missed at distance
+
+### Sky Early-Out Controls
+
+```glsl
+#define RM_SKY_EARLY_OUT_Y 0.6
+#define RM_SKY_EARLY_OUT_CAM_Y 0.05
+```
+
+- Raise `RM_SKY_EARLY_OUT_Y` to make the early-out more conservative
+- Disable if your scene has geometry above the camera
 
 ## Complexity Analysis
 
