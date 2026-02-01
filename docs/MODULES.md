@@ -2,6 +2,8 @@
 
 Quick reference for all GLSL modules in the template.
 
+For deeper, function-by-function explanations, see the [Reference Guide](../reference/README.md).
+
 ## Core Modules
 
 ### globals.glsl

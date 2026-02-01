@@ -49,6 +49,7 @@ raymarching-template/
 | [Extending](docs/EXTENDING.md) | How to add features |
 | [Modules](docs/MODULES.md) | Module API reference |
 | [Optimization](docs/OPTIMIZATION.md) | Performance tuning overview |
+| [Reference Guide](reference/README.md) | Function-by-function shader reference |
 
 ## Feature Flags
 

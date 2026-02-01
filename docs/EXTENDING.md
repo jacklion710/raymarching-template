@@ -2,6 +2,8 @@
 
 This guide covers common extension tasks with step-by-step instructions.
 
+For in-depth function explanations and math background, see the [Reference Guide](../reference/README.md).
+
 ## Table of Contents
 
 1. [Adding a New Object](#adding-a-new-object)

@@ -20,6 +20,10 @@ raymarching-template/
 │   ├── FEATURE-FLAGS.md         # Feature toggle reference
 │   └── EXTENDING.md             # How to extend the template
 │
+├── reference/                   # Detailed shader reference
+│   ├── README.md                # Reference guide index
+│   └── *.md                     # Per-topic deep dives
+│
 ├── modules/                     # GLSL module library
 │   ├── anti-aliasing.glsl       # Anti-aliasing utilities
 │   ├── background.glsl          # Procedural sky/background utilities
