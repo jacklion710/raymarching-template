@@ -73,6 +73,36 @@
 #define RM_ENABLE_GI 1
 #endif
 
+// LOD system (distance-based quality scaling)
+#ifndef RM_ENABLE_LOD
+#define RM_ENABLE_LOD 1
+#endif
+
+// LOD thresholds as ratios of farClip
+#ifndef RM_LOD_MID_RATIO
+#define RM_LOD_MID_RATIO 0.35
+#endif
+
+#ifndef RM_LOD_FAR_RATIO
+#define RM_LOD_FAR_RATIO 0.65
+#endif
+
+// LOD quality scales
+#ifndef RM_LOD_MIN_DIST_SCALE_MID
+#define RM_LOD_MIN_DIST_SCALE_MID 2.5
+#endif
+
+#ifndef RM_LOD_MIN_DIST_SCALE_FAR
+#define RM_LOD_MIN_DIST_SCALE_FAR 5.0
+#endif
+
+#ifndef RM_LOD_MAX_STEPS_SCALE_MID
+#define RM_LOD_MAX_STEPS_SCALE_MID 0.6
+#endif
+
+#ifndef RM_LOD_MAX_STEPS_SCALE_FAR
+#define RM_LOD_MAX_STEPS_SCALE_FAR 0.35
+#endif
 // Emissive flicker phase offset control (0 = synced, 1 = staggered)
 #ifndef RM_EMISSIVE_FLICKER_STAGGER
 #define RM_EMISSIVE_FLICKER_STAGGER 1.0
@@ -93,5 +123,18 @@ uniform vec2 iResolution;
 uniform vec3 lightPos;
 uniform vec3 camPos;
 uniform float farClip, nearClip;
+
+float rmGetLodFactor(float dist){
+#if RM_ENABLE_LOD
+	float mid = farClip * RM_LOD_MID_RATIO;
+	float far = farClip * RM_LOD_FAR_RATIO;
+	return smoothstep(mid, far, dist);
+#else
+	return 0.0;
+#endif
+}
+
+// Per-hit LOD factor (set by shading to drive quality scaling)
+float gLodFactor = 0.0;
 
 #endif

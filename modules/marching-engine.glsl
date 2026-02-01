@@ -99,14 +99,32 @@ vec4 map(vec3 ro, vec3 rd){
 	float dist = 0; 
 	vec4 scene;
 	vec3 pos;
+	float minDist = MIN_DIST;
+	int maxSteps = MAX_STEPS;
+#if RM_ENABLE_LOD
+	float mid = farClip * RM_LOD_MID_RATIO;
+	float far = farClip * RM_LOD_FAR_RATIO;
+#endif
 	
 	for(int i = 0; i < MAX_STEPS; i++) {
+	#if RM_ENABLE_LOD
+		if (currDist > far) {
+			minDist = MIN_DIST * RM_LOD_MIN_DIST_SCALE_FAR;
+			maxSteps = int(float(MAX_STEPS) * RM_LOD_MAX_STEPS_SCALE_FAR);
+		} else if (currDist > mid) {
+			minDist = MIN_DIST * RM_LOD_MIN_DIST_SCALE_MID;
+			maxSteps = int(float(MAX_STEPS) * RM_LOD_MAX_STEPS_SCALE_MID);
+		}
+		if (i >= maxSteps) {
+			break;
+		}
+	#endif
 		pos = ro + rd * currDist;
 		scene = getDist(pos);
 		dist = scene.w;
 		currDist += dist;
 		hitMap = i / MAX_STEPS - 1.0;
-		if(abs(dist) < MIN_DIST || currDist > farClip){
+		if(abs(dist) < minDist || currDist > farClip){
 			break;
 		}
 	}

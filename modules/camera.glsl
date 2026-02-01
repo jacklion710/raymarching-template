@@ -166,6 +166,8 @@ vec3 traceRefraction(vec3 hitPos, vec3 rd, vec3 normal, float ior, vec3 tint, ve
 // Returns: final shaded color
 vec3 shadeHit(vec3 hitPos, vec3 rd, vec3 material, vec3 bgCol) {
 	vec3 normals = getNorm(hitPos);
+	float hitDist = length(hitPos - camPos);
+	gLodFactor = rmGetLodFactor(hitDist);
 	
 	// Get material properties - save these before any calls that might overwrite gMaterial
 	float metallic = gMaterial.metallic;
@@ -174,13 +176,15 @@ vec3 shadeHit(vec3 hitPos, vec3 rd, vec3 material, vec3 bgCol) {
 	float transmission = gMaterial.transmission;
 	float ior = gMaterial.ior;
 	float iridescence = gMaterial.iridescence;
+	float lodFactor = gLodFactor;
 	
 	// Apply iridescence to material color for consistent appearance in reflections
 #if RM_ENABLE_IRIDESCENCE
 	if (iridescence > 0.0) {
 		float NdotV = max(dot(normals, -rd), 0.0);
 		vec3 iriColor = getIridescentColor(NdotV, material);
-		material = mix(material, iriColor, iridescence);
+		float iriLod = iridescence * (1.0 - lodFactor * 0.7);
+		material = mix(material, iriColor, iriLod);
 	}
 #endif
 	
@@ -199,6 +203,7 @@ vec3 shadeHit(vec3 hitPos, vec3 rd, vec3 material, vec3 bgCol) {
 	// Roughness heavily reduces reflection (rough surfaces scatter light)
 	float roughnessDampen = (1.0 - roughness) * (1.0 - roughness);  // Quadratic falloff
 	float reflectionStrength = fresnel * roughnessDampen;
+	reflectionStrength *= (1.0 - lodFactor);
 	
 	// Calculate emission strength (0 = no glow, 1 = full glow)
 	float emissionStrength = clamp(length(emission) / 3.0, 0.0, 1.0);
@@ -213,7 +218,7 @@ vec3 shadeHit(vec3 hitPos, vec3 rd, vec3 material, vec3 bgCol) {
 	vec3 reflectionCol = vec3(0.0);
 #if RM_ENABLE_REFLECTIONS
 	// Skip reflections for rough or highly emissive surfaces
-	if (roughness < 0.85 && emissionStrength < 0.5) {
+	if (roughness < 0.85 && emissionStrength < 0.5 && reflectionStrength > 0.01) {
 		vec3 R = reflect(rd, normals);
 		vec3 reflRo = hitPos + normals * (MIN_DIST * 4.0);
 		vec3 reflColor = getFirstReflection(reflRo, R, bgCol);
@@ -231,7 +236,7 @@ vec3 shadeHit(vec3 hitPos, vec3 rd, vec3 material, vec3 bgCol) {
 #endif
 
 #if RM_ENABLE_REFRACTION
-	if (transmission > 0.0 && ior > 1.0) {
+	if (transmission > 0.0 && ior > 1.0 && lodFactor < 0.35) {
 		vec3 refrColor = traceRefraction(hitPos, rd, normals, ior, material, bgCol);
 		
 		float fresnelRefl = reflectionStrength;

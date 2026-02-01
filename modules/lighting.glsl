@@ -488,9 +488,14 @@ vec3 getLight(vec3 hitPos, vec3 rd, vec3 mate, vec3 normals){
 	float subsurface = gMaterial.subsurface;
 	vec3 subsurfaceCol = gMaterial.subsurfaceCol;
 	float toonSteps = gMaterial.toonSteps;
+	float lodFactor = gLodFactor;
 
 #if !RM_ENABLE_IRIDESCENCE
 	iridescence = 0.0;
+#endif
+
+#if RM_ENABLE_LOD
+	iridescence *= (1.0 - lodFactor * 0.7);
 #endif
 	
 	// Apply iridescence if present (view-dependent color shift)
@@ -540,15 +545,21 @@ vec3 getLight(vec3 hitPos, vec3 rd, vec3 mate, vec3 normals){
 	if (toonSteps > 0.0) {
 		shadowSoftness = 32.0;  // Hard shadow edges
 	} else {
-		occ = getAmbientOcclusion(hitPos, normals);
+		if (lodFactor < 0.6) {
+			occ = getAmbientOcclusion(hitPos, normals);
+		}
 	}
 #else
-	occ = getAmbientOcclusion(hitPos, normals);
+	if (lodFactor < 0.6) {
+		occ = getAmbientOcclusion(hitPos, normals);
+	}
 #endif
 	
 	// Shadow calculation (colored caustics when enabled)
 #if RM_ENABLE_CAUSTIC_SHADOWS
-	vec3 shadowColor = getColoredShadow(hitPos, -lightDir, shadowSoftness);
+	vec3 shadowColor = (lodFactor > 0.4)
+		? vec3(getSimpleShadow(hitPos, -lightDir, shadowSoftness))
+		: getColoredShadow(hitPos, -lightDir, shadowSoftness);
 #else
 	vec3 shadowColor = vec3(getSimpleShadow(hitPos, -lightDir, shadowSoftness));
 #endif
@@ -565,11 +576,11 @@ vec3 getLight(vec3 hitPos, vec3 rd, vec3 mate, vec3 normals){
 	
 	float lightIntensity = 0.28;  // Main light intensity
 	vec3 col = (diffuse + specular) * lightIntensity * shadowColor + ambient;
-	col += getGlobalIllumination(normals, mate, occ);
+	col += getGlobalIllumination(normals, mate, occ) * (1.0 - lodFactor);
 	
 	// Subsurface scattering: light penetrating and scattering inside the material
 #if RM_ENABLE_SSS
-	if (subsurface > 0.0) {
+	if (subsurface > 0.0 && lodFactor < 0.5) {
 		// Estimate thickness by sampling SDF behind the surface
 		float thickness = 0.0;
 		vec3 sampleDir = -normals;
@@ -675,13 +686,31 @@ vec4 mapReflection(vec3 ro, vec3 rd) {
 	float dist = 0.0;
 	vec4 scene;
 	vec3 pos;
+	float minDist = MIN_DIST;
+	int maxSteps = MAX_STEPS;
+#if RM_ENABLE_LOD
+	float mid = farClip * RM_LOD_MID_RATIO;
+	float far = farClip * RM_LOD_FAR_RATIO;
+#endif
 	
 	for (int i = 0; i < MAX_STEPS; i++) {
+	#if RM_ENABLE_LOD
+		if (currDist > far) {
+			minDist = MIN_DIST * RM_LOD_MIN_DIST_SCALE_FAR;
+			maxSteps = int(float(MAX_STEPS) * RM_LOD_MAX_STEPS_SCALE_FAR);
+		} else if (currDist > mid) {
+			minDist = MIN_DIST * RM_LOD_MIN_DIST_SCALE_MID;
+			maxSteps = int(float(MAX_STEPS) * RM_LOD_MAX_STEPS_SCALE_MID);
+		}
+		if (i >= maxSteps) {
+			break;
+		}
+	#endif
 		pos = ro + rd * currDist;
 		scene = getDist(pos);
 		dist = scene.w;
 		currDist += dist;
-		if (abs(dist) < MIN_DIST || currDist > farClip) {
+		if (abs(dist) < minDist || currDist > farClip) {
 			break;
 		}
 	}
@@ -708,6 +737,7 @@ vec3 getFirstReflection(vec3 ro, vec3 rd, vec3 bgCol){
 		float emissionStrength = clamp(length(emission) / 3.0, 0.0, 1.0);
 		
 		vec3 normals = getNorm(hitPos);
+		gLodFactor = rmGetLodFactor(length(hitPos - camPos));
 		// Reduce lighting for emissive objects (they glow uniformly)
 		vec3 lighting = getLight(hitPos, rd, material, normals) * (1.0 - emissionStrength);
 		return lighting + emission;

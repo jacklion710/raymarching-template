@@ -11,14 +11,17 @@
 
 ## Medium Priority
 
-### Visual Polish
-- [x] Palette function for stylized color schemes
-- [ ] "Hetti style" lighting presets
-
 ### Performance
 - [ ] Profile caustic shadows on various GPUs
 - [ ] Optimize SSS thickness sampling
-- [ ] Add LOD system for distant objects
+- [x] Add LOD system for distant objects
+- [ ] Adaptive step count by distance (LOD bands)
+- [ ] Feature gating by distance (refraction/SSS/iridescence/caustics)
+- [ ] Reduce AO/shadow sample counts for far hits
+- [ ] Shadow LOD: switch to simple shadows at distance
+- [ ] Material simplification for far objects
+- [ ] Early-out for rays unlikely to hit (sky/background)
+- [ ] Scene-level culling with cheap bounding volumes
 
 ## Low Priority / Future Ideas
 
@@ -49,3 +52,4 @@ for metallic materials
 - [x] Stagger control for emissive flickering (currently all are in sync) [check the showcase scene for flicker visibility]
 - [x] Flickering point and cone lights
 - [x] Night lights showcase scene with moon
+- [x] Palette function for stylized color schemes
