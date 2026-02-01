@@ -109,7 +109,15 @@ float getAmbientOcclusion(vec3 hitPos, vec3 normal){
 #if RM_ENABLE_AMBIENT_OCCLUSION
 	float occ = 0.0;
 	float sca = 1.0;
-	for(int i = 0; i < 5; i++){
+	int steps = 5;
+#if RM_ENABLE_LOD
+	if (gLodFactor > 0.7) {
+		steps = 2;
+	} else if (gLodFactor > 0.4) {
+		steps = 3;
+	}
+#endif
+	for(int i = 0; i < steps; i++){
 		float h = 0.01 + 0.04 * float(i) / 4.0;
 		float d = getDist(hitPos + normal * h).w;
 		// Emissive and transmissive objects don't contribute to occlusion
@@ -126,42 +134,69 @@ float getAmbientOcclusion(vec3 hitPos, vec3 normal){
 #endif
 }
 
+float getShadowMaxDist() {
+#if RM_ENABLE_LOD
+	return mix(12.0, 6.0, gLodFactor);
+#else
+	return 12.0;
+#endif
+}
+
+float getShadowStepScale() {
+#if RM_ENABLE_LOD
+	return mix(1.0, 1.8, gLodFactor);
+#else
+	return 1.0;
+#endif
+}
+
+float getShadowMinStep() {
+#if RM_ENABLE_LOD
+	return mix(0.01, 0.03, gLodFactor);
+#else
+	return 0.01;
+#endif
+}
+
 // O(n): Simple shadow calculation (no caustics).
 // hitPos: hit position
 // rd: ray direction toward light
 // k: shadow softness (higher = softer penumbra)
 float getSimpleShadow(vec3 hitPos, vec3 rd, float k){
 	float sha = 1.0;
-	for (float h = 0.01; h < 12.0; ){
+	float maxDist = getShadowMaxDist();
+	float stepScale = getShadowStepScale();
+	float minStep = getShadowMinStep();
+	for (float h = minStep; h < maxDist; ){
 		float d = getDist(hitPos + rd * h).w;
 		float hitEmission = length(gMaterial.emission);
 		
 		if (d < MIN_DIST){
 			if (hitEmission > 0.5) {
-				h += 0.15;
+				h += 0.15 * stepScale;
 				continue;
 			}
 			// Transparent materials let some light through
 			if (gMaterial.transmission > 0.5) {
 				sha *= 0.7;
-				h += 0.1;
+				h += 0.1 * stepScale;
 				continue;
 			}
 			// SSS materials are mostly opaque - only slight softening
 			if (gMaterial.subsurface > 0.5) {
 				sha *= 0.15;
-				h += 0.08;
+				h += 0.08 * stepScale;
 				continue;
 			}
 			// Opaque objects (including iridescent) cast full shadows
 			return 0.0;
 		}
 		if (d < 0.1 && hitEmission > 0.5) {
-			h += 0.15;
+			h += 0.15 * stepScale;
 			continue;
 		}
 		sha = min(sha, k * d / h);
-		h += d;
+		h += max(d * stepScale, minStep);
 	}
 	return sha;
 }
@@ -176,8 +211,11 @@ vec3 getColoredShadow(vec3 hitPos, vec3 rd, float k){
 	vec3 shadowColor = vec3(1.0);
 	float sha = 1.0;
 	float causticBrightness = 1.0;
+	float maxDist = getShadowMaxDist();
+	float stepScale = getShadowStepScale();
+	float minStep = getShadowMinStep();
 	
-	for (float h = 0.01; h < 12.0; ){
+	for (float h = minStep; h < maxDist; ){
 		vec3 samplePos = hitPos + rd * h;
 		float d = getDist(samplePos).w;
 		float hitEmission = length(gMaterial.emission);
@@ -191,7 +229,7 @@ vec3 getColoredShadow(vec3 hitPos, vec3 rd, float k){
 		if (d < MIN_DIST){
 			// Emissive objects don't block light - step past them
 			if (hitEmission > 0.5) {
-				h += 0.15;
+				h += 0.15 * stepScale;
 				continue;
 			}
 			
@@ -217,7 +255,7 @@ vec3 getColoredShadow(vec3 hitPos, vec3 rd, float k){
 				shadowColor.b *= 1.0 - chromatic;
 				
 				sha *= mix(1.0, 0.85, hitTransmission);
-				h += 0.06;
+				h += 0.06 * stepScale;
 				continue;
 			}
 			
@@ -243,7 +281,7 @@ vec3 getColoredShadow(vec3 hitPos, vec3 rd, float k){
 				shadowColor *= mix(vec3(1.0), tint, 0.9);
 				sha *= mix(0.12, 0.85, trans);
 
-				h += sssThickness + 0.02;
+				h += (sssThickness + 0.02) * stepScale;
 				continue;
 			}
 			
@@ -258,7 +296,7 @@ vec3 getColoredShadow(vec3 hitPos, vec3 rd, float k){
 					vec3 iriTint = 0.5 + 0.5 * cos(6.28318 * (phase + vec3(0.0, 0.33, 0.67)));
 					shadowColor *= mix(vec3(0.9), iriTint, hitIridescence * 0.5);
 					sha *= mix(1.0, 0.7, hitTransmission);
-					h += 0.08;
+					h += 0.08 * stepScale;
 					continue;
 				}
 				// Opaque iridescent material - full shadow, no color transmission
@@ -271,12 +309,12 @@ vec3 getColoredShadow(vec3 hitPos, vec3 rd, float k){
 		
 		// Early emissive check during approach
 		if (d < 0.1 && hitEmission > 0.5) {
-			h += 0.15;
+			h += 0.15 * stepScale;
 			continue;
 		}
 		
 		sha = min(sha, k * d / h);
-		h += d;
+		h += max(d * stepScale, minStep);
 	}
 	
 	// Apply shadow intensity and caustic brightness to color

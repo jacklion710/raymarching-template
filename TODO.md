@@ -16,7 +16,7 @@
 - [ ] Optimize SSS thickness sampling
 - [ ] Adaptive step count by distance (LOD bands)
 - [ ] Feature gating by distance (refraction/SSS/iridescence/caustics)
-- [ ] Reduce AO/shadow sample counts for far hits
+- [x] Reduce AO/shadow sample counts for far hits
 - [ ] Shadow LOD: switch to simple shadows at distance
 - [ ] Material simplification for far objects
 - [ ] Early-out for rays unlikely to hit (sky/background)
