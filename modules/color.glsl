@@ -212,3 +212,80 @@ vec3 liftGammaGain(vec3 col, vec3 lift, vec3 gamma, vec3 gain) {
 	col = pow(max(col, vec3(0.0)), 1.0 / gamma);
 	return col;
 }
+
+// === Palette utilities ===
+// IQ-style palette: a + b * cos(2pi * (c * t + d))
+vec3 rmPalette(float t, vec3 a, vec3 b, vec3 c, vec3 d) {
+	return a + b * cos(6.28318 * (c * t + d));
+}
+
+vec3 rmClampAlbedo(vec3 col, float maxAlbedo) {
+	return clamp(col, vec3(0.02), vec3(maxAlbedo));
+}
+
+struct PaletteSample {
+	vec3 albedo;
+	vec3 specTint;
+	vec3 emissive;
+	vec3 absorption;
+	float glow;
+};
+
+PaletteSample rmBuildPaletteSample(vec3 base, vec3 accent) {
+	PaletteSample p;
+	p.albedo = clamp(base, 0.0, 1.0);
+	p.specTint = clamp(accent, 0.0, 1.0);
+	p.emissive = pow(max(p.specTint, vec3(0.0)), vec3(1.4));
+	p.absorption = clamp(vec3(1.0) - p.albedo, 0.0, 1.0);
+	p.glow = clamp(dot(p.specTint, vec3(0.3333)), 0.0, 1.0);
+	return p;
+}
+
+// Concert-inspired palette: cyan/teal <-> violet with warm accents.
+PaletteSample rmPaletteConcert(float t) {
+	vec3 base = rmPalette(
+		t,
+		vec3(0.38, 0.46, 0.52),
+		vec3(0.32, 0.26, 0.34),
+		vec3(1.0, 1.0, 1.0),
+		vec3(0.0, 0.2, 0.45)
+	);
+	vec3 accent = rmPalette(
+		t + 0.18,
+		vec3(0.52, 0.34, 0.68),
+		vec3(0.42, 0.32, 0.38),
+		vec3(1.0, 1.0, 1.0),
+		vec3(0.3, 0.05, 0.6)
+	);
+	return rmBuildPaletteSample(base, accent);
+}
+
+#define RM_PALETTE_MODE_ALBEDO 0
+#define RM_PALETTE_MODE_SPEC_TINT 1
+#define RM_PALETTE_MODE_EMISSIVE 2
+#define RM_PALETTE_MODE_ABSORPTION 3
+#define RM_PALETTE_MODE_FULL_STYLIZED 4
+
+Material applyPaletteToMaterial(Material baseMat, PaletteSample p, float influence, int mode) {
+	float w = clamp(influence, 0.0, 1.0);
+	Material outMat = baseMat;
+
+	if (mode == RM_PALETTE_MODE_ALBEDO) {
+		vec3 target = rmClampAlbedo(p.albedo, 0.85);
+		outMat.albedo = mix(baseMat.albedo, target, w);
+	} else if (mode == RM_PALETTE_MODE_SPEC_TINT) {
+		vec3 metalTint = mix(baseMat.albedo, p.specTint, w);
+		vec3 dielTint = mix(baseMat.albedo, mix(baseMat.albedo, p.specTint, 0.25), w);
+		outMat.albedo = mix(dielTint, metalTint, clamp(baseMat.metallic, 0.0, 1.0));
+	} else if (mode == RM_PALETTE_MODE_EMISSIVE) {
+		outMat.emission = mix(baseMat.emission, p.emissive * (0.5 + 1.5 * p.glow), w);
+	} else if (mode == RM_PALETTE_MODE_ABSORPTION) {
+		outMat.subsurfaceCol = mix(baseMat.subsurfaceCol, vec3(1.0) - p.absorption, w);
+	} else if (mode == RM_PALETTE_MODE_FULL_STYLIZED) {
+		outMat.albedo = mix(baseMat.albedo, p.albedo, w);
+		outMat.emission = mix(baseMat.emission, p.emissive * (0.6 + 1.6 * p.glow), w);
+		outMat.subsurfaceCol = mix(baseMat.subsurfaceCol, vec3(1.0) - p.absorption, w);
+	}
+
+	return outMat;
+}

@@ -46,8 +46,9 @@
 <include source="env-map-demo.glsl" program="fp" />
 <include source="sss-demo.glsl" program="fp" />
 <include source="hg-sdf-modifiers.glsl" program="fp" />
-<include source="iridescence-showcase.glsl" program="fp" />
-<include source="night-lights.glsl" program="fp" />
+	<include source="iridescence-showcase.glsl" program="fp" />
+	<include source="night-lights.glsl" program="fp" />
+	<include source="palette-concert.glsl" program="fp" />
 
 <program name="vp" type="vertex" source="raymarching-template.vp.glsl" />
 <program name="fp" type="fragment" source="raymarching-template.fp.glsl" />
