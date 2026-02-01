@@ -50,6 +50,7 @@
 	<include source="night-lights.glsl" program="fp" />
 	<include source="palette-concert.glsl" program="fp" />
 	<include source="optimization-test.glsl" program="fp" />
+	<include source="edge-glow-halo.glsl" program="fp" />
 
 <program name="vp" type="vertex" source="raymarching-template.vp.glsl" />
 <program name="fp" type="fragment" source="raymarching-template.fp.glsl" />

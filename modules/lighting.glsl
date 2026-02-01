@@ -17,6 +17,7 @@ vec3 iridescenceShowcaseSceneLights(vec3 hitPos, vec3 normals, vec3 rd, vec3 mat
 vec3 nightLightsSceneLights(vec3 hitPos, vec3 normals, vec3 rd, vec3 mate);
 vec3 paletteConcertSceneLights(vec3 hitPos, vec3 normals, vec3 rd, vec3 mate);
 vec3 optimizationTestSceneLights(vec3 hitPos, vec3 normals, vec3 rd, vec3 mate);
+vec3 edgeGlowHaloSceneLights(vec3 hitPos, vec3 normals, vec3 rd, vec3 mate);
 
 // Scene-specific background dispatcher (defined in marching-engine.glsl)
 vec3 getBackground(vec3 rd, vec3 ro);
@@ -46,6 +47,8 @@ vec3 getSceneLights(vec3 hitPos, vec3 normals, vec3 rd, vec3 mate) {
 	return paletteConcertSceneLights(hitPos, normals, rd, mate);
 #elif RM_ACTIVE_SCENE == SCENE_OPTIMIZATION_TEST
 	return optimizationTestSceneLights(hitPos, normals, rd, mate);
+#elif RM_ACTIVE_SCENE == SCENE_EDGE_GLOW_HALO
+	return edgeGlowHaloSceneLights(hitPos, normals, rd, mate);
 #endif
 }
 
