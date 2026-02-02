@@ -28,3 +28,75 @@ float obj1(vec3 pos, vec3 c, vec3 ra){
 	closest = max(cube, -sphere);
 	return max(closest, sphere2);
 }
+
+// O(n): Fractal-style box SDF (abs fold + offset + rotate + scale).
+// p: world-space position being sampled (modified internally)
+// offset: per-iteration offset (vec3)
+// scaleFact: scale multiplier per iteration
+// angle: rotation angles for xy and yz
+// sminFact: smooth union factor
+// iterations: number of iterations (clamped to max)
+float rmFoldFractalBoxSdf(vec3 p, vec3 offset, float scaleFact, vec2 angle, float sminFact, int iterations){
+	const int RM_FOLD_FRACTAL_MAX_ITER = 16;
+	float dist = fBox(p, vec3(0.25));
+	float scale = 1.0;
+
+	for (int i = 0; i < RM_FOLD_FRACTAL_MAX_ITER; i++) {
+		if (i >= iterations) {
+			break;
+		}
+		p = abs(p);
+		p -= offset * scale;
+
+		vec2 xy = p.xy;
+		pR(xy, angle.x);
+		p.xy = xy;
+
+		vec2 yz = p.yz;
+		pR(yz, angle.y);
+		p.yz = yz;
+
+		float box = fBox(p, vec3(scale));
+		dist = smin(dist, box, sminFact);
+		scale *= scaleFact;
+	}
+
+	return dist;
+}
+
+// O(n): Folded-space fractal SDF for a sphere base.
+float rmFoldFractalSphereSdf(vec3 p, vec3 offset, float scaleFact, vec2 angle, float sminFact, int iterations){
+	const int RM_FOLD_FRACTAL_MAX_ITER = 16;
+	float dist = fSphere(p, 0.25);
+	float scale = 1.0;
+
+	for (int i = 0; i < RM_FOLD_FRACTAL_MAX_ITER; i++) {
+		if (i >= iterations) {
+			break;
+		}
+		p = abs(p);
+		p -= offset * scale;
+
+		vec2 xy = p.xy;
+		pR(xy, angle.x);
+		p.xy = xy;
+
+		vec2 yz = p.yz;
+		pR(yz, angle.y);
+		p.yz = yz;
+
+		float sph = fSphere(p, scale);
+		dist = smin(dist, sph, sminFact);
+		scale *= scaleFact;
+	}
+
+	return dist;
+}
+
+// Shape-agnostic folded fractal wrapper (0 = box, 1 = sphere).
+float rmFoldFractalSdf(vec3 p, int shape, vec3 offset, float scaleFact, vec2 angle, float sminFact, int iterations){
+	if (shape == 1) {
+		return rmFoldFractalSphereSdf(p, offset, scaleFact, angle, sminFact, iterations);
+	}
+	return rmFoldFractalBoxSdf(p, offset, scaleFact, angle, sminFact, iterations);
+}

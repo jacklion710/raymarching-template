@@ -12,6 +12,10 @@
 
 <param name="iTime" type="float" default="0.0" />
 <param name="iResolution" type="vec2" state="RESOLUTION" />
+<param name="foldOffset" type="vec3" default="0.25 0.25 0.25" />
+<param name="foldScaleFact" type="float" default="0.575" />
+<param name="foldAngle" type="vec2" default="0.25 0.18" />
+<param name="foldSminFact" type="float" default="0.08" />
 
 <language name="glsl" version="1.5">
 
@@ -25,6 +29,10 @@
 
 <bind param="iTime" program="fp" />
 <bind param="iResolution" program="fp" />
+<bind param="foldOffset" program="fp" />
+<bind param="foldScaleFact" program="fp" />
+<bind param="foldAngle" program="fp" />
+<bind param="foldSminFact" program="fp" />
 
 <include source="globals.glsl" program="fp" />
 <include source="noise.glsl" program="fp" />
@@ -46,11 +54,12 @@
 <include source="env-map-demo.glsl" program="fp" />
 <include source="sss-demo.glsl" program="fp" />
 <include source="hg-sdf-modifiers.glsl" program="fp" />
-	<include source="iridescence-showcase.glsl" program="fp" />
-	<include source="night-lights.glsl" program="fp" />
-	<include source="palette-concert.glsl" program="fp" />
-	<include source="optimization-test.glsl" program="fp" />
-	<include source="edge-glow-halo.glsl" program="fp" />
+<include source="iridescence-showcase.glsl" program="fp" />
+<include source="night-lights.glsl" program="fp" />
+<include source="palette-concert.glsl" program="fp" />
+<include source="optimization-test.glsl" program="fp" />
+<include source="edge-glow-halo.glsl" program="fp" />
+<include source="ao-fractal-box.glsl" program="fp" />
 
 <program name="vp" type="vertex" source="raymarching-template.vp.glsl" />
 <program name="fp" type="fragment" source="raymarching-template.fp.glsl" />

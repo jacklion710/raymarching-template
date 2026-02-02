@@ -5,7 +5,7 @@
 #define RM_GLOBALS_GLSL
 
 // Scene selection - change this to switch between scenes
-// Available scenes: SCENE_SHOWCASE, SCENE_CAUSTICS, SCENE_SSS_DEMO, SCENE_ENV_MAP, SCENE_HG_SDF_MODIFIERS, SCENE_IRIDESCENCE_SHOWCASE, SCENE_NIGHT_LIGHTS, SCENE_PALETTE_CONCERT, SCENE_OPTIMIZATION_TEST, SCENE_EDGE_GLOW_HALO
+// Available scenes: SCENE_SHOWCASE, SCENE_CAUSTICS, SCENE_SSS_DEMO, SCENE_ENV_MAP, SCENE_HG_SDF_MODIFIERS, SCENE_IRIDESCENCE_SHOWCASE, SCENE_NIGHT_LIGHTS, SCENE_PALETTE_CONCERT, SCENE_OPTIMIZATION_TEST, SCENE_EDGE_GLOW_HALO, SCENE_AO_FRACTAL_BOX
 #define SCENE_SHOWCASE 0
 #define SCENE_CAUSTICS 1
 #define SCENE_SSS_DEMO 2
@@ -16,9 +16,10 @@
 #define SCENE_PALETTE_CONCERT 7
 #define SCENE_OPTIMIZATION_TEST 8
 #define SCENE_EDGE_GLOW_HALO 9
+#define SCENE_AO_FRACTAL_BOX 10
 
 #ifndef RM_ACTIVE_SCENE
-#define RM_ACTIVE_SCENE SCENE_EDGE_GLOW_HALO
+#define RM_ACTIVE_SCENE SCENE_AO_FRACTAL_BOX
 #endif
 
 // Raymarch settings
@@ -151,10 +152,14 @@ uniform vec2 iResolution;
 uniform vec3 lightPos;
 uniform vec3 camPos;
 uniform float farClip, nearClip;
+uniform vec3 foldOffset;
+uniform float foldScaleFact;
+uniform vec2 foldAngle;
+uniform float foldSminFact;
 
 float rmGetLodFactor(float dist){
 #if RM_ENABLE_LOD
-	#if RM_ACTIVE_SCENE == SCENE_EDGE_GLOW_HALO
+	#if RM_ACTIVE_SCENE == SCENE_EDGE_GLOW_HALO || RM_ACTIVE_SCENE == SCENE_AO_FRACTAL_BOX
 	return 0.0;
 	#else
 	float mid = farClip * RM_LOD_MID_RATIO;
@@ -168,7 +173,7 @@ float rmGetLodFactor(float dist){
 
 float rmGetStepScale(float dist){
 #if RM_ENABLE_STEP_SCALE
-	#if RM_ACTIVE_SCENE == SCENE_EDGE_GLOW_HALO
+	#if RM_ACTIVE_SCENE == SCENE_EDGE_GLOW_HALO || RM_ACTIVE_SCENE == SCENE_AO_FRACTAL_BOX
 	return 1.0;
 	#else
 	float mid = farClip * RM_LOD_MID_RATIO;
